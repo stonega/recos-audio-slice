@@ -1,0 +1,9 @@
+providers = ["python"]
+[phases.setup]
+nixPkgs = ['ffmpeg']
+
+[phases.build]
+cmds = ['pip install -r requirements.txt']
+
+[start]
+cmd = 'gunicorn app:app --timeout 60'
