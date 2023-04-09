@@ -2,3 +2,5 @@ flask
 pydub
 gunicorn
 requests
+tqdm
+flask_caching
