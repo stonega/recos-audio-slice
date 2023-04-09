@@ -15,7 +15,7 @@ config = {
 }
 app = Flask(__name__)
 app.config.from_mapping(config)
-# CORS(app)
+CORS(app)
 cache = Cache(app)
 
 @app.route('/')
