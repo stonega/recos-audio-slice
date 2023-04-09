@@ -1,4 +1,4 @@
-from flask import Flask, Response, send_file, request, jsonify
+from flask import Flask, Response, request, jsonify
 from pydub import AudioSegment
 from tqdm import tqdm
 import io
@@ -42,8 +42,8 @@ def zip_audios(sliced_audios):
                 audio.export(slice_io, format="mp3")
                 slice_io.seek(0)
                 zipf.writestr(f'slice_{idx+1}.mp3', slice_io.read())
-            zip_buffer.seek(0)
-            return zip_buffer.read()
+        zip_buffer.seek(0)
+        return zip_buffer.read()
 
 
 @app.route('/upload', methods=['POST'])
@@ -60,19 +60,19 @@ def upload_file():
         })
         
     
-@app.route('/slice', methods=['GET'])
+@app.route('/download', methods=['GET'])
 @cache.cached(timeout=50)
 def fetch_and_slice_audio():
     if request.method == 'GET':
         audio_url = request.args['url']
-        print(audio_url)
+        print('Downloading:', audio_url)
         response = requests.get(audio_url, stream=True)
         total_size = int(response.headers.get('content-length', 0))
 
         # Initialize the bytearray
         content = bytearray()
 
-        for data in tqdm(response.iter_content(chunk_size = 1024 * 1024), total = total_size // (1024 * 1024) , unit = 'MB', unit_scale = True):
+        for data in tqdm(response.iter_content(chunk_size = 1024 * 1024), total = total_size // 1024 / 1024 , unit = 'MB', unit_scale = True):
             content.extend(data)
 
         if response.status_code == 200:
