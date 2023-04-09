@@ -81,6 +81,7 @@ def fetch_and_slice_audio():
             audio = AudioSegment.from_file(io.BytesIO(content))
             sliced_audios = slice_audio(audio, 20 * 60 * 1000)  # Slice into max 20-minute chunks
             zip = zip_audios(sliced_audios)
+            print('Request sent')
             return Response(zip, headers={
                 'Content-Disposition': 'attachment; filename=audio.zip',
                 'Content-Type': 'application/zip'
