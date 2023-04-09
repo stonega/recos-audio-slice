@@ -1,5 +1,5 @@
-providers = ["python"]
 [phases.setup]
+providers = ["python"]
 nixPkgs = ['ffmpeg']
 
 [phases.build]
