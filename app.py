@@ -5,6 +5,7 @@ import io
 import requests
 import zipfile
 from flask_caching import Cache
+from flask_cors import CORS
 
 config = {
     "DEBUG": True,          # some Flask specific configs
@@ -14,6 +15,7 @@ config = {
 }
 app = Flask(__name__)
 app.config.from_mapping(config)
+CORS(app)
 cache = Cache(app)
 
 @app.route('/')
