@@ -78,6 +78,7 @@ def fetch_and_slice_audio():
             content.extend(data)
 
         if response.status_code == 200:
+            print('Audio downloaded')
             audio = AudioSegment.from_file(io.BytesIO(content))
             sliced_audios = slice_audio(audio, 20 * 60 * 1000)  # Slice into max 20-minute chunks
             zip = zip_audios(sliced_audios)

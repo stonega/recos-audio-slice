@@ -2,4 +2,4 @@
 nixPkgs = ['...', 'ffmpeg']
 
 [start]
-cmd = 'gunicorn app:app --timeout 60'
+cmd = 'gunicorn app:app --timeout 120'
