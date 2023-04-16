@@ -18,10 +18,6 @@ app.config.from_mapping(config)
 CORS(app)
 cache = Cache(app)
 
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
-
 def slice_audio(audio, slice_duration):
     slices = []
     duration = len(audio)
