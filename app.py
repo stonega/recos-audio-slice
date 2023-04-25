@@ -1,4 +1,4 @@
-from flask import Flask, Response, request, jsonify
+from flask import Flask, Response, flash, request, jsonify
 from pydub import AudioSegment
 from tqdm import tqdm
 import io
@@ -13,10 +13,16 @@ config = {
     "CACHE_DEFAULT_TIMEOUT": 300,
     "MAX_CONTENT_LENGTH": 100 * 1024 * 1024  # 100 MB max upload limit
 }
+ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
+
 app = Flask(__name__)
 app.config.from_mapping(config)
 CORS(app)
 cache = Cache(app)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def slice_audio(audio, slice_duration):
     slices = []
@@ -48,14 +54,18 @@ def zip_audios(sliced_audios):
 @cache.cached(timeout=50)
 def upload_file():
     if request.method == 'POST':
+        if 'file' not in request.files:
+            flash('No file part')
+            return jsonify({'error': 'No file part'}), 400
         file = request.files['file']
-        audio = AudioSegment.from_file(file)
-        sliced_audios = slice_audio(audio, 20 * 60 * 1000)  # Slice into max 10-minute chunks
-        zip = zip_audios(sliced_audios)
-        return Response(zip, headers={
-            'Content-Disposition': 'attachment; filename=audio.zip',
-            'Content-Type': 'application/zip'
-        })
+        if file and allowed_file(file.filename):
+            audio = AudioSegment.from_file(file)
+            sliced_audios = slice_audio(audio, 20 * 60 * 1000)  # Slice into max 20-minute chunks
+            zip = zip_audios(sliced_audios)
+            return Response(zip, headers={
+                'Content-Disposition': 'attachment; filename=audio.zip',
+                'Content-Type': 'application/zip'
+            })
         
     
 @app.route('/download', methods=['GET'])
