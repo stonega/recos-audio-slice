@@ -2,6 +2,7 @@
     "cSpell.words": [
         "gunicorn",
         "jsonify",
+        "modelz",
         "pydub",
         "tqdm",
         "zipf"

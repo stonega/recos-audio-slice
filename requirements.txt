@@ -1,7 +1,6 @@
-flask
+fastapi
+python-multipart
 pydub
 gunicorn
 requests
 tqdm
-flask_caching
-flask-cors
