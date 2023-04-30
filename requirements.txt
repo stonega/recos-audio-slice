@@ -1,7 +1,9 @@
 fastapi
+openai
 python-multipart
 pydub
 gunicorn
 requests
+uuid
 tqdm
 uvicorn[standard]
