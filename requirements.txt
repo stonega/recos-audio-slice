@@ -4,3 +4,4 @@ pydub
 gunicorn
 requests
 tqdm
+uvicorn[standard]
