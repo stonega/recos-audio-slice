@@ -1,5 +1,6 @@
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, UploadFile
+from typing import Annotated
+from fastapi import FastAPI, Form, File, HTTPException, Response, UploadFile
 from fastapi.responses import StreamingResponse
 from pydub import AudioSegment
 from tqdm import tqdm
@@ -78,17 +79,13 @@ def upload_file(file: UploadFile):
         print('audio length:', len(audio))
         # Slice into max 20-minute chunks
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
-        def generate():
-            for file in sliced_audios:
-                slice_io = io.BytesIO()
-                file.export(slice_io, format="mp3")
-                slice_io.seek(0)
-                yield from slice_io
-        return StreamingResponse(generate(), headers={'Content-Disposition': 'attachment; filename=audio.tar.gz'})
+        zip = zip_audios(sliced_audios)
+        print('Request sent')
+        return StreamingResponse(io.BytesIO(zip), headers={'Content-Disposition': 'attachment; filename=audio.zip', "Content-Type": "application/zip"})
 
     else:
         raise HTTPException(status_code=404, detail="Invalid audio file")
-    
+
 
 @app.get('/download')
 def fetch_and_slice_audio(audio_url):
@@ -99,21 +96,17 @@ def fetch_and_slice_audio(audio_url):
     # Initialize the bytearray
     content = bytearray()
 
-    for data in tqdm(response.iter_content(chunk_size = 1024 * 1024), total = total_size // 1024 / 1024 , unit = 'MB', unit_scale = True):
+    for data in tqdm(response.iter_content(chunk_size=1024 * 1024), total=total_size // 1024 / 1024, unit='MB', unit_scale=True):
         content.extend(data)
 
     if response.status_code == 200:
         print('Audio downloaded')
         audio = AudioSegment.from_file(io.BytesIO(content))
-        sliced_audios = slice_audio(audio, 20 * 60 * 1000)  # Slice into max 20-minute chunks
+        # Slice into max 20-minute chunks
+        sliced_audios = slice_audio(audio, 20 * 60 * 1000)
+        zip = zip_audios(sliced_audios)
         print('Request sent')
-        def generate():
-            for file in sliced_audios:
-                slice_io = io.BytesIO()
-                file.export(slice_io, format="mp3")
-                slice_io.seek(0)
-                yield from slice_io
-        return StreamingResponse(generate(), headers={'Content-Disposition': 'attachment; filename=audio.tar.gz'})
+        return StreamingResponse(zip, headers={'Content-Disposition': 'attachment; filename=audio.zip', "Content-Type": "application/zip"})
     else:
         raise HTTPException(status_code=404, detail="Failed to fetch url")
 

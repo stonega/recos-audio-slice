@@ -5,6 +5,7 @@
         "modelz",
         "pydub",
         "tqdm",
+        "uvicorn",
         "zipf"
     ]
 }
