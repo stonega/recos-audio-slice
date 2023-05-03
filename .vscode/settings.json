@@ -5,6 +5,7 @@
         "hkdf",
         "jsonify",
         "modelz",
+        "mpga",
         "pydantic",
         "pydub",
         "tqdm",

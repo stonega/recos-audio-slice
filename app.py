@@ -18,7 +18,6 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-
 from credit import get_user_credit, update_user_credit
 
 load_dotenv()
@@ -60,11 +59,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 def slice_audio(audio, slice_duration):
     startTime = datetime.now()
@@ -188,7 +185,7 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         if(duration > credit):
             raise HTTPException(status_code=404, detail="Insufficient credit")
         format = 'srt' if srt else 'text'
-        print('audio length:', len(audio))
+        print('Audio length:', len(audio))
         # Slice into max 20-minute chunks
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
         results = []

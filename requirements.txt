@@ -4,6 +4,7 @@ python-multipart
 pydub
 gunicorn
 requests
+cryptography
 uuid
 tqdm
 python-jose
