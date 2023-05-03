@@ -150,7 +150,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
 
     if response.status_code == 200:
         print('Audio downloaded')
-        credit = get_user_credit(current_user.id)
+        credit = get_user_credit(current_user.sub)
         audio = AudioSegment.from_file(io.BytesIO(content))
         duration = round(audio.duration_seconds / 60)
         if(duration > credit):
@@ -170,7 +170,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
                 transcript = openai.Audio.transcribe("whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
                 results.append(transcript if srt else transcript.text)
             os.remove(filename)
-        update_user_credit(current_user.id, -duration)
+        update_user_credit(current_user.sub, -duration)
         print('Request sent')
         return results
     else:
@@ -179,7 +179,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
 @app.post('/transcript')
 def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get_current_user)], srt: bool = False,):
     if file and allowed_file(file.filename):
-        credit = get_user_credit(current_user.id)
+        credit = get_user_credit(current_user.sub)
         audio = AudioSegment.from_file(file.file)
         duration = round(audio.length_seconds / 60)
         if(duration > credit):
@@ -201,7 +201,7 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
                 print(transcript)
                 results.append(transcript if srt else transcript)
             os.remove(filename)
-        update_user_credit(current_user.id, -duration)
+        update_user_credit(current_user.sub, -duration)
         print('Request sent')
         return results
     else:
