@@ -2,8 +2,10 @@
     "cSpell.words": [
         "dotenv",
         "gunicorn",
+        "hkdf",
         "jsonify",
         "modelz",
+        "pydantic",
         "pydub",
         "tqdm",
         "uvicorn",

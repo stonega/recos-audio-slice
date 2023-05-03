@@ -6,4 +6,6 @@ gunicorn
 requests
 uuid
 tqdm
+python-jose
+psycopg2-binary
 uvicorn[standard]
