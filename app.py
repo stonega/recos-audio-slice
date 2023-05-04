@@ -24,7 +24,7 @@ load_dotenv()
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "_")
 ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
-
+ONE_MINUTE=1000*60
 app = FastAPI()
 
 origins = [
@@ -152,7 +152,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         print('Audio downloaded')
         credit = get_user_credit(current_user['sub'])
         audio = AudioSegment.from_file(io.BytesIO(content))
-        duration = round(audio.duration_seconds / 60)
+        duration = round(len(audio) / ONE_MINUTE)
         if(duration > credit):
             raise HTTPException(status_code=404, detail="Insufficient credit")
         format = 'srt' if srt else 'text'
@@ -181,7 +181,7 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
     if file and allowed_file(file.filename):
         credit = get_user_credit(current_user['sub'])
         audio = AudioSegment.from_file(file.file)
-        duration = round(audio.length_seconds / 60)
+        duration = round(len(audio) / ONE_MINUTE)
         if(duration > credit):
             raise HTTPException(status_code=404, detail="Insufficient credit")
         format = 'srt' if srt else 'text'
