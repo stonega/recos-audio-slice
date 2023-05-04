@@ -198,7 +198,6 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
                 f.write(slice_io.read())
             with open(filename, "rb") as f:
                 transcript = openai.Audio.transcribe("whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
-                print(transcript)
                 results.append(transcript if srt else transcript)
             os.remove(filename)
         update_user_credit(current_user['sub'], -duration)
