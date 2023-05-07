@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def get_user_credit(user_id: str):
     print('connecting...')
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
@@ -13,11 +14,12 @@ def get_user_credit(user_id: str):
     user = cursor.fetchone()
     return user[-1]
 
+
 def update_user_credit(user_id: str, credit: int):
-    print('connecting...')
+    print('update credit...', credit)
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
-    update_query = """UPDATE "User" SET credit = credit +  %s WHERE id = %s;"""
+    update_query = """UPDATE "User" SET credit = credit + %s WHERE id = %s;"""
     cursor.execute(update_query, (credit, user_id))
     conn.commit()
     return cursor.rowcount
