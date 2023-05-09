@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from datetime import datetime
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from pydub import AudioSegment
@@ -24,7 +24,7 @@ load_dotenv()
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "_")
 ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
-ONE_MINUTE=1000*60
+ONE_MINUTE = 1000*60
 app = FastAPI()
 
 origins = [
@@ -34,11 +34,13 @@ origins = [
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
 class User(BaseModel):
     username: str
     email: str | None = None
     full_name: str | None = None
     disabled: bool | None = None
+
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     hkdf = HKDF(
@@ -59,9 +61,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def slice_audio(audio, slice_duration):
     startTime = datetime.now()
@@ -136,7 +140,7 @@ def fetch_and_slice_audio(audio_url):
 
 
 @app.get('/transcript')
-def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)], srt: bool = False ):
+def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)], srt: bool = False):
     print('Downloading:', url)
     print('Srt format', srt)
     response = requests.get(url, stream=True)
@@ -153,7 +157,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         credit = get_user_credit(current_user['sub'])
         audio = AudioSegment.from_file(io.BytesIO(content))
         duration = round(len(audio) / ONE_MINUTE)
-        if(duration > credit):
+        if (duration > credit):
             raise HTTPException(status_code=404, detail="Insufficient credit")
         format = 'srt' if srt else 'text'
         # Slice into max 20-minute chunks
@@ -167,7 +171,8 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
             with open(filename, "wb") as f:
                 f.write(slice_io.read())
             with open(filename, "rb") as f:
-                transcript = openai.Audio.transcribe("whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
+                transcript = openai.Audio.transcribe(
+                    "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
                 results.append(transcript if srt else transcript.text)
             os.remove(filename)
         update_user_credit(current_user['sub'], -duration)
@@ -176,13 +181,14 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
     else:
         raise HTTPException(status_code=404, detail="Failed to fetch url")
 
+
 @app.post('/transcript')
-def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get_current_user)], srt: bool = False,):
+def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get_current_user)], srt: Annotated[bool, Form()] = False):
     if file and allowed_file(file.filename):
         credit = get_user_credit(current_user['sub'])
         audio = AudioSegment.from_file(file.file)
         duration = round(len(audio) / ONE_MINUTE)
-        if(duration > credit):
+        if (duration > credit):
             raise HTTPException(status_code=404, detail="Insufficient credit")
         format = 'srt' if srt else 'text'
         print('Audio length:', len(audio))
@@ -197,8 +203,9 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
             with open(filename, "wb") as f:
                 f.write(slice_io.read())
             with open(filename, "rb") as f:
-                transcript = openai.Audio.transcribe("whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
-                results.append(transcript if srt else transcript)
+                transcript = openai.Audio.transcribe(
+                    "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
+                results.append(transcript if srt else transcript.text)
             os.remove(filename)
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
