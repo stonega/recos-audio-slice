@@ -173,7 +173,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
             with open(filename, "rb") as f:
                 transcript = openai.Audio.transcribe(
                     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
-                results.append(transcript if srt else transcript.text)
+                results.append(transcript)
             os.remove(filename)
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
@@ -205,7 +205,7 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
             with open(filename, "rb") as f:
                 transcript = openai.Audio.transcribe(
                     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
-                results.append(transcript if srt else transcript.text)
+                results.append(transcript)
             os.remove(filename)
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
