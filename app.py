@@ -197,8 +197,8 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         print('Audio length:', len(audio))
         # Slice into max 20-minute chunks
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
-        with multiprocessing.Pool(processes=slice_audio.len()) as pool:
-            results = pool.map(transcribe_audio, list(map(lambda audio:(audio, format), sliced_audios)))
+        with multiprocessing.Pool(processes=len(sliced_audios)) as pool:
+            results = pool.starmap(transcribe_audio, list(map(lambda audio:(audio, format), sliced_audios)))
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
         return results
