@@ -11,5 +11,6 @@
         "tqdm",
         "uvicorn",
         "zipf"
-    ]
+    ],
+    "python.analysis.typeCheckingMode": "basic"
 }
