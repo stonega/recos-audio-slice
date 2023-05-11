@@ -108,11 +108,10 @@ def transcribe_audio(audio, format):
     with open(filename, "wb") as f:
         f.write(slice_io.read())
     with open(filename, "rb") as f:
-        print(format)
-        transcript = openai.Audio.transcribe(
-            "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
+        # transcript = openai.Audio.transcribe(
+        #     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
         os.remove(filename)
-        return transcript
+        return '' 
 
 
 @app.post('/upload')
