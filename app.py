@@ -101,17 +101,13 @@ def zip_audios(sliced_audios):
         return zip_buffer.read()
 
 def transcribe_audio(audio, format):
-    slice_io = io.BytesIO()
-    audio.export(slice_io, format="mp3")
-    slice_io.seek(0)
     filename = '/tmp/' + str(uuid.uuid4()) + '.mp3'
-    with open(filename, "wb") as f:
-        f.write(slice_io.read())
+    audio.export(filename, format="mp3")
     with open(filename, "rb") as f:
-        # transcript = openai.Audio.transcribe(
-        #     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
+        transcript = openai.Audio.transcribe(
+            "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format)
         os.remove(filename)
-        return '' 
+        return transcript
 
 
 @app.post('/upload')
