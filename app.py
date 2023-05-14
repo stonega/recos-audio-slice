@@ -99,10 +99,12 @@ def zip_audios(sliced_audios):
         end_time = datetime.now()
         print('Zip took', end_time - start_time)
         return zip_buffer.read()
-
-def transcribe_audio(audio, format, prompt):
+def export_mp3(audio):
     filename = '/tmp/' + str(uuid.uuid4()) + '.mp3'
     audio.export(filename, format="mp3")
+    return filename
+
+def transcribe_audio(filename, format, prompt):
     with open(filename, "rb") as f:
         transcript = openai.Audio.transcribe(
             "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
@@ -172,12 +174,13 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         format = 'srt' if srt else 'text'
         # Slice into max 20-minute chunks
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
+        files = []
+        for audio in sliced_audios:
+            print('Audio length:', len(audio))
+            files.append(export_mp3(audio))
         results = []
-        # for audio in sliced_audios:
-        #     print('Audio length:', len(audio))
-        #     results.append(transcribe_audio(audio, format, prompt))
         with multiprocessing.Pool(processes=1) as pool:
-            results = pool.starmap(transcribe_audio, list(map(lambda audio:(audio, format, prompt), sliced_audios)))
+            results = pool.starmap(transcribe_audio, list(map(lambda file:(file, format, prompt), files)))
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
         return results
@@ -197,12 +200,13 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         print('Audio length:', len(audio))
         # Slice into max 20-minute chunks
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
+        files = []
+        for audio in sliced_audios:
+            print('Audio length:', len(audio))
+            files.append(export_mp3(audio))
         results = []
-        # for audio in sliced_audios:
-        #     print('Audio length:', len(audio))
-        #     results.append(transcribe_audio(audio, format, prompt))
-        with multiprocessing.Pool(processes=1) as pool:
-            results = pool.starmap(transcribe_audio, list(map(lambda audio:(audio, format, prompt), sliced_audios)))
+        with multiprocessing.Pool(processes=3) as pool:
+            results = pool.starmap(transcribe_audio, list(map(lambda file:(file, format, prompt), files)))
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
         return results
