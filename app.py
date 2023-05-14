@@ -187,9 +187,8 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         # Transcribe
         results = []
         inputs = list(map(lambda file:(file, format, prompt), files))
-        with multiprocessing.Pool(processes=3) as pool:
+        with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
-            pool.close()
         # Update user credit
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
@@ -218,9 +217,8 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         results = []
         # Transcribe
         inputs = list(map(lambda file:(file, format, prompt), files))
-        with multiprocessing.Pool(processes=3) as pool:
+        with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
-            pool.close()
         # Update user credit
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
