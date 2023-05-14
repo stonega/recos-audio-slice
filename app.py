@@ -109,6 +109,7 @@ def export_mp3(audio):
     return filename
 
 def transcribe_audio(filename, format, prompt):
+    print('Request openapi', filename, format, prompt, sep="---")
     with open(filename, "rb") as f:
         transcript = openai.Audio.transcribe(
             "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
@@ -178,14 +179,17 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         format = 'srt' if srt else 'text'
         # Slice into max 20-minute chunks
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
+        # Save files in /tmp
         files = []
         for audio in sliced_audios:
             print('Audio length:', len(audio))
             files.append(export_mp3(audio))
+        # Transcribe
         results = []
         inputs = list(map(lambda file:(file, format, prompt), files))
-        with multiprocessing.Pool(processes=1) as pool:
+        with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
+        # Update user credit
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
         return results
@@ -205,14 +209,17 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         print('Audio length:', len(audio))
         # Slice into max 20-minute chunks
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
+        # Export audio files
         files = []
         for audio in sliced_audios:
             print('Audio length:', len(audio))
             files.append(export_mp3(audio))
         results = []
+        # Transcribe
         inputs = list(map(lambda file:(file, format, prompt), files))
-        with multiprocessing.Pool(processes=3) as pool:
+        with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
+        # Update user credit
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
         return results
