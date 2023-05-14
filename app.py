@@ -99,9 +99,13 @@ def zip_audios(sliced_audios):
         end_time = datetime.now()
         print('Zip took', end_time - start_time)
         return zip_buffer.read()
+
 def export_mp3(audio):
+    start_time = datetime.now()
     filename = '/tmp/' + str(uuid.uuid4()) + '.mp3'
     audio.export(filename, format="mp3")
+    end_time = datetime.now()
+    print('Audio saved', filename,  end_time - start_time, sep="---")
     return filename
 
 def transcribe_audio(filename, format, prompt):
