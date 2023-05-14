@@ -176,7 +176,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         # for audio in sliced_audios:
         #     print('Audio length:', len(audio))
         #     results.append(transcribe_audio(audio, format, prompt))
-        with multiprocessing.Pool(processes=3) as pool:
+        with multiprocessing.Pool(processes=1) as pool:
             results = pool.starmap(transcribe_audio, list(map(lambda audio:(audio, format, prompt), sliced_audios)))
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
@@ -201,7 +201,7 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         # for audio in sliced_audios:
         #     print('Audio length:', len(audio))
         #     results.append(transcribe_audio(audio, format, prompt))
-        with multiprocessing.Pool(processes=3) as pool:
+        with multiprocessing.Pool(processes=1) as pool:
             results = pool.starmap(transcribe_audio, list(map(lambda audio:(audio, format, prompt), sliced_audios)))
         update_user_credit(current_user['sub'], -duration)
         print('Request sent')
