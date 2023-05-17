@@ -5,6 +5,7 @@ import zipfile
 import openai
 import uuid
 import json
+import logging
 import multiprocessing
 from jose import jwe
 from cryptography.hazmat.primitives import hashes
@@ -125,7 +126,7 @@ def upload_file(file: UploadFile):
         # Slice into max 20-minute chunks
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
         zip = zip_audios(sliced_audios)
-        print('Request sent')
+        logging.info('Request sent')
         return StreamingResponse(io.BytesIO(zip), headers={'Content-Disposition': 'attachment; filename=audio.zip', "Content-Type": "application/zip"})
 
     else:
