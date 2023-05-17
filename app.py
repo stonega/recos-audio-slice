@@ -152,7 +152,7 @@ def fetch_and_slice_audio(url):
         sliced_audios = slice_audio(audio, 20 * 60 * 1000)
         zip = zip_audios(sliced_audios)
         print('Request sent')
-        return StreamingResponse(zip, headers={'Content-Disposition': 'attachment; filename=audio.zip', "Content-Type": "application/zip"})
+        return StreamingResponse(io.BytesIO(zip), headers={'Content-Disposition': 'attachment; filename=audio.zip', "Content-Type": "application/zip"})
     else:
         raise HTTPException(status_code=404, detail="Failed to fetch url")
 
