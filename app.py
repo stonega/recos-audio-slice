@@ -39,9 +39,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class User(BaseModel):
     sub: str
-    # email: str | None = None
-    # full_name: str | None = None
-    # disabled: bool | None = None
+    email: str | None = None
+    name: str | None = None
+    disabled: bool | None = None
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
