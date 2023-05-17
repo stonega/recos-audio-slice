@@ -38,10 +38,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 class User(BaseModel):
-    username: str
-    email: str | None = None
-    full_name: str | None = None
-    disabled: bool | None = None
+    sub: str
+    # email: str | None = None
+    # full_name: str | None = None
+    # disabled: bool | None = None
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
@@ -134,9 +134,9 @@ def upload_file(file: UploadFile):
 
 
 @app.get('/download')
-def fetch_and_slice_audio(audio_url):
-    print('Downloading:', audio_url)
-    response = requests.get(audio_url, stream=True)
+def fetch_and_slice_audio(url):
+    print('Downloading:', url)
+    response = requests.get(url, stream=True)
     total_size = int(response.headers.get('content-length', 0))
 
     # Initialize the bytearray
