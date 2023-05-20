@@ -14,12 +14,13 @@ def get_user_credit(user_id: str):
     user = cursor.fetchone()
     return user[-1]
 
-
-def update_user_credit(user_id: str, credit: int):
+def update_user_credit(user_id: str, credit: int, name: str | None):
     print('update credit...', credit)
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
     update_query = """UPDATE "User" SET credit = credit + %s WHERE id = %s;"""
     cursor.execute(update_query, (credit, user_id))
+    insert = """INSERT "Credit" (name, user_id, credit) VALUES (%s, %s, %s);"""
+    cursor.execute(insert, (name, user_id, -credit))
     conn.commit()
     return cursor.rowcount

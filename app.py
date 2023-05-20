@@ -158,7 +158,7 @@ def fetch_and_slice_audio(url):
 
 
 @app.get('/transcript')
-def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)], srt: bool = False, prompt: str = ''):
+def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = ''):
     print('Downloading:', url)
     print('Srt format', srt)
     response = requests.get(url, stream=True)
@@ -191,7 +191,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(current_user['sub'], -duration)
+        update_user_credit(current_user['sub'], -duration, title)
         print('Request sent')
         return results
     else:
@@ -221,7 +221,7 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(current_user['sub'], -duration)
+        update_user_credit(current_user['sub'], -duration, file.filename)
         print('Request sent')
         return results
     else:
