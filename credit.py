@@ -20,7 +20,7 @@ def update_user_credit(user_id: str, credit: int, duration: int, name: str | Non
     cursor = conn.cursor()
     update_query = """UPDATE "User" SET credit = credit + %s WHERE id = %s;"""
     cursor.execute(update_query, (credit, user_id))
-    insert = """INSERT INTO "Credit" (name, user_id, credit, audio_length) VALUES (%s, %s, %s, %s);"""
+    insert = """INSERT INTO "Credit" (name, userId, credit, audio_length) VALUES (%s, %s, %s, %s);"""
     cursor.execute(insert, (name, user_id, -credit, duration))
     conn.commit()
     return cursor.rowcount
