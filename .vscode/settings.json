@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "cuid",
         "dotenv",
         "gunicorn",
         "hkdf",

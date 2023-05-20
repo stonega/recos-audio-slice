@@ -9,4 +9,5 @@ uuid
 tqdm
 python-jose
 psycopg2-binary
+cuid
 uvicorn[standard]
