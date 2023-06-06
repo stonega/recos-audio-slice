@@ -31,6 +31,7 @@ app = FastAPI()
 
 origins = [
     "https://recos.vercel.app",
+    "https://recos.studio",
     "http://localhost:3000",
 ]
 
