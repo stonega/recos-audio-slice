@@ -3,7 +3,6 @@ openai
 python-multipart
 pydub
 gunicorn
-requests
 cryptography
 uuid
 tqdm
@@ -11,4 +10,5 @@ python-jose
 psycopg2-binary
 cuid
 uvicorn[standard]
+httpx
 pytube
