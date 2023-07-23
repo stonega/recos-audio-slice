@@ -173,7 +173,11 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         print('Youtube audio url', url)
     print('Downloading:', url)
     print('Srt format', srt)
-    response = requests.get(url, stream=True)
+    try:
+        response = requests.get(url, stream=True)
+    except requests.exceptions.HTTPError as err:
+        raise HTTPException(status_code=404, detail="Failed to fetch url")
+
     total_size = int(response.headers.get('content-length', 0))
 
     # Initialize the bytearray
