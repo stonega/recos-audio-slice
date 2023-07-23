@@ -9,6 +9,7 @@
         "mpga",
         "pydantic",
         "pydub",
+        "pytube",
         "tqdm",
         "uvicorn",
         "zipf"

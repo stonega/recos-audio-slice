@@ -121,8 +121,8 @@ def transcribe_audio(filename, format, prompt):
 
 def get_youtube_audio_url (link):
     print('Transcribing youtube', link)
-    selected_video = YouTube('https://www.youtube.com/watch?v=xWOoBJUqlbI')
-    audio_url = selected_video.streams.filter(only_audio=True).first().url
+    audio = YouTube(link)
+    audio_url = audio.streams.filter(only_audio=True).first().url
     return audio_url
 
 @app.post('/upload')
@@ -169,6 +169,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
     if (type == 'youtube'):
         print('Youtube url', url)
         url = get_youtube_audio_url(url)
+        print('Youtube audio url', url)
     print('Downloading:', url)
     print('Srt format', srt)
     response = requests.get(url, stream=True)

@@ -11,4 +11,4 @@ python-jose
 psycopg2-binary
 cuid
 uvicorn[standard]
-pytube3
+pytube
