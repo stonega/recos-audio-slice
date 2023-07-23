@@ -21,6 +21,7 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from credit import get_user_credit, update_user_credit
+from pytube import YouTube
 
 load_dotenv()
 
@@ -118,6 +119,11 @@ def transcribe_audio(filename, format, prompt):
         os.remove(filename)
         return transcript
 
+def get_youtube_audio_url (link):
+    print('Transcribing youtube', link)
+    selected_video = YouTube('https://www.youtube.com/watch?v=xWOoBJUqlbI')
+    audio_url = selected_video.streams.filter(only_audio=True).first().url
+    return audio_url
 
 @app.post('/upload')
 def upload_file(file: UploadFile):
@@ -159,7 +165,10 @@ def fetch_and_slice_audio(url):
 
 
 @app.get('/transcript')
-def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = ''):
+def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
+    if (type == 'youtube'):
+        print('Youtube url', url)
+        url = get_youtube_audio_url(url)
     print('Downloading:', url)
     print('Srt format', srt)
     response = requests.get(url, stream=True)
