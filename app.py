@@ -4,7 +4,7 @@ import zipfile
 import openai
 import uuid
 import json
-import httpx
+import requests
 import logging
 import multiprocessing
 from jose import jwe
@@ -125,17 +125,6 @@ def get_youtube_audio_url (link):
     audio_url = audio.streams.filter(only_audio=True).first().url
     return audio_url
 
-async def get_chunks_with_progress(response: httpx.Response):
-    print('Response', response.headers)
-    total = int(response.headers["content-length"])
-    print('Total size', total)
-    num_bytes_downloaded = response.num_bytes_downloaded
-    with tqdm(total=total, unit_scale=True, unit_divisor=1024, unit='MB') as progress:
-        async for chunk in response.aiter_bytes(1024*1024):
-            yield chunk
-            progress.update(response.num_bytes_downloaded - num_bytes_downloaded)
-            num_bytes_downloaded = response.num_bytes_downloaded
-
 @app.post('/upload')
 def upload_file(file: UploadFile):
     if file and allowed_file(file.filename):
@@ -155,12 +144,14 @@ def upload_file(file: UploadFile):
 async def fetch_and_slice_audio(url):
     print('Downloading:', url)
     # Initialize the bytearray
+    response = requests.get(url, stream=True)
+    total_size = int(response.headers.get('content-length', 0))
+
+    # Initialize the bytearray
     content = bytearray()
-    content = bytearray()
-    async with httpx.AsyncClient() as client:
-        async with client.stream("GET", url) as response:
-            async for chunk in get_chunks_with_progress(response):
-                content.extend(chunk)
+
+    for data in tqdm(response.iter_content(chunk_size=1024 * 1024), total=total_size // 1024 / 1024, unit='MB', unit_scale=True):
+        content.extend(data)
 
     if response.status_code == 200:
         print('Audio downloaded')
@@ -175,19 +166,21 @@ async def fetch_and_slice_audio(url):
 
 
 @app.get('/transcript')
-async def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
+def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
     if (type == 'youtube'):
         print('Youtube url', url)
         url = get_youtube_audio_url(url)
         print('Youtube audio url', url)
     print('Downloading:', url)
     print('Srt format', srt)
+    response = requests.get(url, stream=True)
+    total_size = int(response.headers.get('content-length', 0))
+
     # Initialize the bytearray
     content = bytearray()
-    async with httpx.AsyncClient() as client:
-        async with client.stream("GET", url) as response:
-            async for chunk in get_chunks_with_progress(response):
-                content.extend(chunk)
+
+    for data in tqdm(response.iter_content(chunk_size=1024 * 1024), total=total_size // 1024 / 1024, unit='MB', unit_scale=True):
+        content.extend(data)
 
     if response.status_code == 200:
         print('Audio downloaded')

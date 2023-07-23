@@ -2,6 +2,7 @@ fastapi
 openai
 python-multipart
 pydub
+requests
 gunicorn
 cryptography
 uuid
@@ -10,5 +11,4 @@ python-jose
 psycopg2-binary
 cuid
 uvicorn[standard]
-httpx
 pytube
