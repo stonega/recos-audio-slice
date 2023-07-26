@@ -13,15 +13,18 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from datetime import datetime
 from typing import Annotated
 from fastapi import Depends, FastAPI, Form, HTTPException, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from pydub import AudioSegment
 from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from credit import get_user_credit, update_user_credit
+from credit import add_credit_record, get_user_credit, update_user_credit
 from pytube import YouTube
+
+from worker import transcript_file_task_add, transcript_task_add
+from worker import celery
 
 load_dotenv()
 
@@ -53,8 +56,16 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         salt=b"",
         info="NextAuth.js Generated Encryption Key".encode(),
     )
-    key = hkdf.derive(os.environ.get('JWT_SECRET').encode())
-    user = jwe.decrypt(token, key).decode()
+    secret = os.environ.get('JWT_SECRET')
+    if secret is None:
+        return None
+    else :
+        key = hkdf.derive(secret.encode())
+        user_decoded = jwe.decrypt(token, key)
+        if user_decoded is None:
+            return None
+        else:
+            user = user_decoded.decode()
     return json.loads(user)
 
 app.add_middleware(
@@ -121,9 +132,12 @@ def transcribe_audio(filename, format, prompt):
 
 def get_youtube_audio_url (link):
     print('Transcribing youtube', link)
-    audio = YouTube(link)
-    audio_url = audio.streams.filter(only_audio=True).first().url
-    return audio_url
+    yt = YouTube(link)
+    audio = yt.streams.filter(only_audio=True).first()
+    if audio is None:
+        return 'Failed to fetch url'
+    else:
+        return audio.url
 
 @app.post('/upload')
 def upload_file(file: UploadFile):
@@ -188,7 +202,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
 
     if response.status_code == 200:
         print('Audio downloaded')
-        credit = get_user_credit(current_user['sub'])
+        credit = get_user_credit(current_user.sub)
         audio = AudioSegment.from_file(io.BytesIO(content))
         duration = round(len(audio) / ONE_MINUTE)
         if (duration > credit):
@@ -207,7 +221,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(current_user['sub'], -duration, len(audio), title, 'podcast')
+        update_user_credit(current_user.sub, -duration, len(audio), title, 'podcast')
         print('Request sent')
         return results
     else:
@@ -217,7 +231,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
 @app.post('/transcript')
 def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
     if file and allowed_file(file.filename):
-        credit = get_user_credit(current_user['sub'])
+        credit = get_user_credit(current_user.sub)
         audio = AudioSegment.from_file(file.file)
         duration = round(len(audio) / ONE_MINUTE)
         if (duration > credit):
@@ -237,8 +251,31 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(current_user['sub'], -duration, len(audio), file.filename, 'audio')
+        update_user_credit(current_user.sub, -duration, len(audio), file.filename, 'audio')
         print('Request sent')
         return results
     else:
         raise HTTPException(status_code=404, detail="No file found")
+
+
+@app.get("/transcript-task")
+def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
+    task = transcript_task_add.delay(url, current_user, title, srt, prompt, type)
+    add_credit_record(task.id, current_user.sub, title, 'audio')
+    return JSONResponse({"task_id": task.id})
+
+@app.post("/transcript-task")
+def transcript_file_task(file: UploadFile, current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
+    task = transcript_file_task_add.delay(file, current_user, srt, prompt, type)
+    add_credit_record(task.id, current_user.sub, file.filename, 'audio')
+    return JSONResponse({"task_id": task.id})
+
+@app.get("/tasks/{task_id}")
+def get_status(task_id):
+    task_result = celery.AsyncResult(task_id)
+    result = {
+        "task_id": task_id,
+        "task_status": task_result.status,
+        "task_result": task_result.result
+    }
+    return JSONResponse(result)

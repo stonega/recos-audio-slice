@@ -11,6 +11,7 @@
         "pydantic",
         "pydub",
         "pytube",
+        "recos",
         "tqdm",
         "uvicorn",
         "zipf"

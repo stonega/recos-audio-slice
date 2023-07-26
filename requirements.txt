@@ -12,3 +12,5 @@ psycopg2-binary
 cuid
 uvicorn[standard]
 pytube
+redis
+celery[redis]
