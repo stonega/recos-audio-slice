@@ -25,6 +25,7 @@ from pytube import YouTube
 
 from worker import transcript_file_task_add, transcript_task_add
 from worker import celery
+from celery.signals import task_postrun
 
 load_dotenv()
 
@@ -202,7 +203,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
 
     if response.status_code == 200:
         print('Audio downloaded')
-        credit = get_user_credit(current_user.sub)
+        credit = get_user_credit(current_user['sub'])
         audio = AudioSegment.from_file(io.BytesIO(content))
         duration = round(len(audio) / ONE_MINUTE)
         if (duration > credit):
@@ -221,7 +222,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(current_user.sub, -duration, len(audio), title, 'podcast')
+        update_user_credit(current_user['sub'], -duration, len(audio), title, 'podcast')
         print('Request sent')
         return results
     else:
@@ -231,7 +232,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
 @app.post('/transcript')
 def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
     if file and allowed_file(file.filename):
-        credit = get_user_credit(current_user.sub)
+        credit = get_user_credit(current_user['sub'])
         audio = AudioSegment.from_file(file.file)
         duration = round(len(audio) / ONE_MINUTE)
         if (duration > credit):
@@ -251,7 +252,7 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(current_user.sub, -duration, len(audio), file.filename, 'audio')
+        update_user_credit(current_user['sub'], -duration, len(audio), file.filename, 'audio')
         print('Request sent')
         return results
     else:
@@ -261,13 +262,13 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
 @app.get("/transcript-task")
 def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
     task = transcript_task_add.delay(url, current_user, title, srt, prompt, type)
-    add_credit_record(task.id, current_user.sub, title, 'audio')
+    add_credit_record(task.id, current_user['sub'], title, 'audio')
     return JSONResponse({"task_id": task.id})
 
 @app.post("/transcript-task")
 def transcript_file_task(file: UploadFile, current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
     task = transcript_file_task_add.delay(file, current_user, srt, prompt, type)
-    add_credit_record(task.id, current_user.sub, file.filename, 'audio')
+    add_credit_record(task.id, current_user['sub'], file.filename, 'audio')
     return JSONResponse({"task_id": task.id})
 
 @app.get("/tasks/{task_id}")
@@ -279,3 +280,7 @@ def get_status(task_id):
         "task_result": task_result.result
     }
     return JSONResponse(result)
+
+@task_postrun.connect
+def task_sent_handler(taskId, task, args, kwargs, retval, state, **extra_info):
+    print('task_postrun for task id {taskId}', taskId)
