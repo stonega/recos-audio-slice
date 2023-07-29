@@ -1,6 +1,7 @@
 from datetime import datetime
 import io
 import multiprocessing
+from typing import BinaryIO
 import openai
 import os
 import uuid
@@ -111,11 +112,11 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         return 'Failed to fetch url'
 
 @celery.task(name="transcript-file.add")
-def transcript_file_task_add(file: UploadFile, user, srt: bool = False, prompt: str = ''):
+def transcript_file_task_add(file: BinaryIO, filename: str, user, srt: bool = False, prompt: str = ''):
 
-    if file and allowed_file(file.filename):
+    if file and allowed_file(filename):
         credit = get_user_credit(user['sub'])
-        audio = AudioSegment.from_file(file.file)
+        audio = AudioSegment.from_file(file)
         duration = round(len(audio) / ONE_MINUTE)
         if (duration > credit):
             return 'Insufficient credit'
@@ -134,7 +135,7 @@ def transcript_file_task_add(file: UploadFile, user, srt: bool = False, prompt: 
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(user['sub'], -duration, len(audio), file.filename, 'audio')
+        update_user_credit(user['sub'], -duration, len(audio), filename, 'audio')
         print('Request sent')
         return results
     else:
