@@ -112,11 +112,10 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         return 'Failed to fetch url'
 
 @celery.task(name="transcript-file.add")
-def transcript_file_task_add(fileId: str, filename: str, user, srt: bool = False, prompt: str = ''):
-    if fileId and allowed_file(filename):
+def transcript_file_task_add(file: BinaryIO, filename: str, user, srt: bool = False, prompt: str = ''):
+    if file and allowed_file(filename):
         credit = get_user_credit(user['sub'])
         backend_api = os.environ.get('BACKEND_API', '_')
-        file = requests.get(backend_api + '/files/' + fileId).content
         audio = AudioSegment.from_file(file)
         duration = round(len(audio) / ONE_MINUTE)
         if (duration > credit):
