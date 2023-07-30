@@ -18,7 +18,6 @@ from credit import get_user_credit, update_credit_record, update_user_credit
 
 load_dotenv()
 celery = Celery('recos', broker=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"), backend=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"))
-celery.conf.task_serializer = 'pickle'
 
 ONE_MINUTE = 1000*60
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "_")
@@ -113,10 +112,11 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         return 'Failed to fetch url'
 
 @celery.task(name="transcript-file.add")
-def transcript_file_task_add(file: BinaryIO, filename: str, user, srt: bool = False, prompt: str = ''):
-
-    if file and allowed_file(filename):
+def transcript_file_task_add(fileId: str, filename: str, user, srt: bool = False, prompt: str = ''):
+    if fileId and allowed_file(filename):
         credit = get_user_credit(user['sub'])
+        backend_api = os.environ.get('BACKEND_API', '_')
+        file = requests.get(backend_api + '/files/' + fileId).content
         audio = AudioSegment.from_file(file)
         duration = round(len(audio) / ONE_MINUTE)
         if (duration > credit):

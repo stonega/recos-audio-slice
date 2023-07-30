@@ -22,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from credit import add_credit_record, get_user_credit, update_user_credit
 from pytube import YouTube
+from fastapi.staticfiles import StaticFiles
 
 from worker import transcript_file_task_add, transcript_task_add
 from worker import celery
@@ -33,6 +34,8 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "_")
 ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
 ONE_MINUTE = 1000*60
 app = FastAPI()
+
+app.mount("/files", StaticFiles(directory="/tmp"), name="files")
 
 origins = [
     "https://recos.vercel.app",
@@ -122,6 +125,14 @@ def export_mp3(audio):
     end_time = datetime.now()
     print('Audio saved', filename,  end_time - start_time, sep="---")
     return filename
+
+def save_file(file):
+    id = str(uuid.uuid4()) + '_' + file.filename
+    filename = '/tmp/' + id
+    with open(filename, "wb+") as file_object:
+        file_object.write(file.file.read())
+    print('Audio saved', filename)
+    return id
 
 def transcribe_audio(filename, format, prompt):
     print('Request openapi', filename, format, prompt, sep="---")
@@ -267,7 +278,8 @@ def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_
 
 @app.post("/transcript-task")
 def transcript_file_task(file: UploadFile, current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
-    task = transcript_file_task_add.delay(file.file, file.filename, current_user, srt, prompt)
+    fileId = save_file(file)
+    task = transcript_file_task_add.delay(fileId, file.filename, current_user, srt, prompt)
     add_credit_record(task.id, current_user['sub'], file.filename, 'audio')
     return JSONResponse({"task_id": task.id})
 
