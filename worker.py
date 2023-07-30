@@ -18,6 +18,7 @@ from credit import get_user_credit, update_credit_record, update_user_credit
 load_dotenv()
 celery = Celery('recos', broker=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"), backend=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"))
 celery.conf.task_serializer = 'pickle'
+celery.conf.accept_content = ['application/json', 'application/x-python-serialize']
 
 ONE_MINUTE = 1000*60
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "_")
