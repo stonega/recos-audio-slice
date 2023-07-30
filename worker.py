@@ -12,12 +12,12 @@ from celery import Celery
 from dotenv import load_dotenv
 from tqdm import tqdm
 import requests
-from fastapi import UploadFile
 
 from credit import get_user_credit, update_credit_record, update_user_credit
 
 load_dotenv()
 celery = Celery('recos', broker=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"), backend=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"))
+app.conf.task_serializer = 'pickle'
 
 ONE_MINUTE = 1000*60
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "_")
