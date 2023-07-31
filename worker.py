@@ -12,6 +12,7 @@ from celery import Celery
 from dotenv import load_dotenv
 from tqdm import tqdm
 import requests
+from celery.signals import task_postrun
 
 from credit import get_user_credit, update_credit_record, update_user_credit
 
@@ -141,3 +142,7 @@ def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False
         return results
     else:
         return 'File not allowed'
+    
+@task_postrun.connect
+def task_sent_handler(taskId, task, args, kwargs, retval, state, **extra_info):
+    print('task_postrun for task id {taskId}', taskId)

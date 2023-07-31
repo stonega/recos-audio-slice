@@ -26,7 +26,6 @@ from fastapi.staticfiles import StaticFiles
 
 from worker import transcript_file_task_add, transcript_task_add
 from worker import celery
-from celery.signals import task_postrun
 
 load_dotenv()
 
@@ -293,6 +292,4 @@ def get_status(task_id):
     }
     return JSONResponse(result)
 
-@task_postrun.connect
-def task_sent_handler(taskId, task, args, kwargs, retval, state, **extra_info):
-    print('task_postrun for task id {taskId}', taskId)
+
