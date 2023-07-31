@@ -117,7 +117,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
 def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False, prompt: str = ''):
     if file and allowed_file(filename):
         credit = get_user_credit(user['sub'])
-        audio = AudioSegment.from_file(file)
+        audio = AudioSegment.from_file(io.BytesIO(file))
         duration = round(len(audio) / ONE_MINUTE)
         if (duration > credit):
             return 'Insufficient credit'
