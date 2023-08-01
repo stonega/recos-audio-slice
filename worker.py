@@ -1,7 +1,6 @@
 from datetime import datetime
 import io
 import multiprocessing
-from typing import BinaryIO
 import openai
 import os
 import uuid
@@ -144,5 +143,5 @@ def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False
         return 'File not allowed'
     
 @task_postrun.connect
-def task_sent_handler(taskId, task, args, kwargs, retval, state, **extra_info):
-    print('task_postrun for task id {taskId}', taskId)
+def task_sent_handler(task_id, task, args, kwargs, retval, state, **extra_info):
+    print('task_postrun for task id {taskId}', task_id)
