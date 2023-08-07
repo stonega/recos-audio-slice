@@ -20,7 +20,7 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from credit import add_credit_record, get_user_credit, update_user_credit
+from database import add_credit_record, get_user_credit, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
 
@@ -291,5 +291,3 @@ def get_status(task_id):
         "task_result": task_result.result
     }
     return JSONResponse(result)
-
-

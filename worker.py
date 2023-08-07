@@ -13,7 +13,8 @@ from tqdm import tqdm
 import requests
 from celery.signals import task_postrun
 
-from credit import get_user_credit, update_credit_record, update_user_credit
+from database import get_user_credit, save_result, update_credit_record, update_user_credit
+from utils import merge_multiple_srt_strings
 
 load_dotenv()
 celery = Celery('recos', broker=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"), backend=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"))
@@ -137,6 +138,8 @@ def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
         update_credit_record(transcript_file_task_add.request.id, user['sub'], -duration, len(audio), 'audio')
+        srts = parse_srt(merge_multiple_srt_strings(results)) # type: ignore
+        save_result(srts, transcript_file_task_add.request.id)
         print('Request sent')
         return results
     else:

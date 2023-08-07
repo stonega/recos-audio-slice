@@ -2,6 +2,7 @@
     "cSpell.words": [
         "cuid",
         "dotenv",
+        "executemany",
         "gunicorn",
         "hkdf",
         "httpx",
@@ -13,6 +14,7 @@
         "pydub",
         "pytube",
         "recos",
+        "srts",
         "tqdm",
         "uvicorn",
         "zipf"
