@@ -57,7 +57,7 @@ def save_result(srt_items: List[SrtItem], task_id: str):
     srts = list(map(lambda s:(task_id, s['id'], s['start_time'], s['end_time'], s['text']), srt_items))
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
-    insert = """INSERT INTO "Result" (task_id, subtitle_id, start_timestamp, end_timestamp, text ) VALUES (%s, %s, %s, %s, %s);"""
+    insert = """INSERT INTO "Subtitle" (task_id, subtitle_id, start_timestamp, end_timestamp, text ) VALUES (%s, %s, %s, %s, %s);"""
     cursor.executemany(insert, srts)
     conn.commit()
     return cursor.rowcount
