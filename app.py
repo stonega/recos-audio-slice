@@ -20,7 +20,7 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from database import add_credit_record, get_user_credit, update_user_credit
+from database import add_credit_record, get_subtitle_result, get_user_credit, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
 
@@ -62,7 +62,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     secret = os.environ.get('JWT_SECRET')
     if secret is None:
         return None
-    else :
+    else:
         key = hkdf.derive(secret.encode())
         user_decoded = jwe.decrypt(token, key)
         if user_decoded is None:
@@ -117,6 +117,7 @@ def zip_audios(sliced_audios):
         print('Zip took', end_time - start_time)
         return zip_buffer.read()
 
+
 def export_mp3(audio):
     start_time = datetime.now()
     filename = '/tmp/' + str(uuid.uuid4()) + '.mp3'
@@ -124,6 +125,7 @@ def export_mp3(audio):
     end_time = datetime.now()
     print('Audio saved', filename,  end_time - start_time, sep="---")
     return filename
+
 
 def save_file(file):
     id = str(uuid.uuid4()) + '_' + file.filename
@@ -133,6 +135,7 @@ def save_file(file):
     print('Audio saved', filename)
     return id
 
+
 def transcribe_audio(filename, format, prompt):
     print('Request openapi', filename, format, prompt, sep="---")
     with open(filename, "rb") as f:
@@ -141,7 +144,8 @@ def transcribe_audio(filename, format, prompt):
         os.remove(filename)
         return transcript
 
-def get_youtube_audio_url (link):
+
+def get_youtube_audio_url(link):
     print('Transcribing youtube', link)
     yt = YouTube(link)
     audio = yt.streams.filter(only_audio=True).first()
@@ -149,6 +153,7 @@ def get_youtube_audio_url (link):
         return 'Failed to fetch url'
     else:
         return audio.url
+
 
 @app.post('/upload')
 def upload_file(file: UploadFile):
@@ -228,11 +233,12 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
             files.append(export_mp3(audio))
         # Transcribe
         results = []
-        inputs = list(map(lambda file:(file, format, prompt), files))
+        inputs = list(map(lambda file: (file, format, prompt), files))
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(current_user['sub'], -duration, len(audio), title, 'podcast')
+        update_user_credit(
+            current_user['sub'], -duration, len(audio), title, 'podcast')
         print('Request sent')
         return results
     else:
@@ -258,11 +264,12 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
             files.append(export_mp3(audio))
         results = []
         # Transcribe
-        inputs = list(map(lambda file:(file, format, prompt), files))
+        inputs = list(map(lambda file: (file, format, prompt), files))
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_user_credit(current_user['sub'], -duration, len(audio), file.filename, 'audio')
+        update_user_credit(
+            current_user['sub'], -duration, len(audio), file.filename, 'audio')
         print('Request sent')
         return results
     else:
@@ -271,16 +278,20 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
 
 @app.get("/transcript-task")
 def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
-    task = transcript_task_add.delay(url, current_user, title, srt, prompt, type)
+    task = transcript_task_add.delay(
+        url, current_user, title, srt, prompt, type)
     add_credit_record(task.id, current_user['sub'], title, 'audio')
     return JSONResponse({"task_id": task.id})
+
 
 @app.post("/transcript-task")
 async def transcript_file_task(file: UploadFile, current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
     file_bytes = await file.read()
-    task = transcript_file_task_add.delay(file_bytes, file.filename, current_user, srt, prompt)
+    task = transcript_file_task_add.delay(
+        file_bytes, file.filename, current_user, srt, prompt)
     add_credit_record(task.id, current_user['sub'], file.filename, 'audio')
     return JSONResponse({"task_id": task.id})
+
 
 @app.get("/tasks/{task_id}")
 def get_status(task_id):
@@ -291,3 +302,9 @@ def get_status(task_id):
         "task_result": task_result.result
     }
     return JSONResponse(result)
+
+@app.get("/transcript-result/{task_id}")
+def get_transcript_result(task_id, current_user: Annotated[User, Depends(get_current_user)]):
+    results = get_subtitle_result(task_id)
+    subtitles = list(map(lambda s: {'id': s[3], 'text': s[4], 'startTimestamp': s[5], 'endTimestamp': s[6]}, results))
+    return JSONResponse(subtitles)

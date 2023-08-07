@@ -13,7 +13,7 @@ from tqdm import tqdm
 import requests
 from celery.signals import task_postrun
 
-from database import get_user_credit, save_result, update_credit_record, update_user_credit
+from database import get_user_credit, save_subtitle_result, update_credit_record
 from utils import merge_multiple_srt_strings, parse_srt
 
 load_dotenv()
@@ -140,7 +140,7 @@ def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False
         update_credit_record(transcript_file_task_add.request.id, user['sub'], -duration, len(audio), 'audio')
         srts = parse_srt(merge_multiple_srt_strings(*results)) # type: ignore
         # Save subtitles
-        save_result(srts, transcript_file_task_add.request.id)
+        save_subtitle_result(srts, transcript_file_task_add.request.id)
         print('Request sent')
         return results
     else:
