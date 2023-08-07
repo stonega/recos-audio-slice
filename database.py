@@ -55,7 +55,7 @@ def update_user_credit(user_id: str, credit: int, duration: int, name: str | Non
 
 def save_result(srt_items: List[SrtItem], task_id: str):
     print('save result...')
-    srts = list(map(lambda s:(uuid.uuid4(), task_id, s['id'], s['start_time'], s['end_time'], s['text']), srt_items))
+    srts = list(map(lambda s:(str(uuid.uuid4()), task_id, s['id'], s['start_time'], s['end_time'], s['text']), srt_items))
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
     insert = """INSERT INTO "Subtitle" (id, task_id, subtitle_id, start_timestamp, end_timestamp, text ) VALUES (%s, %s, %s, %s, %s, %s);"""
