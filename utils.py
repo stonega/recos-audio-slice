@@ -85,6 +85,7 @@ def merge_multi_srt_items(*items: SrtItem) -> SrtItem:
     }
 
 def merge_multiple_srt_strings(*srts: str) -> str:
+    print(srts)
     first_srt, *remaining_srts = srts
     merged_srt_string = first_srt
     for srt in remaining_srts:
