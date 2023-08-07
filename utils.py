@@ -12,6 +12,7 @@ def parse_srt(srt_string: str) -> List[SrtItem]:
         end_time = parts[1].split(" --> ")[1]
         srt_item = {
             "id": int(parts[0]),
+            "time": parts[1],
             "start_time": start_time,
             "end_time": end_time,
             "text": "\n".join(parts[2:])
@@ -50,18 +51,18 @@ def merge_srt_strings(srt1: str, srt2: str) -> str:
         parts = start.split(":")
         time_in_ms = (int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2].replace(",", "."))) * 1000
         adjusted_time = time_in_ms + end_time_srt1
-        ms = adjusted_time % 1000
-        seconds = (adjusted_time // 1000) % 60
-        minutes = (adjusted_time // (1000 * 60)) % 60
-        hours = (adjusted_time // (1000 * 60 * 60))
+        ms = int(adjusted_time % 1000)
+        seconds = int((adjusted_time // 1000) % 60)
+        minutes = int((adjusted_time // (1000 * 60)) % 60)
+        hours = int((adjusted_time // (1000 * 60 * 60)))
         start_adjusted = f"{hours:02d}:{minutes:02d}:{seconds:02d},{ms:03d}"
         parts = end.split(":")
         time_in_ms = (int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2].replace(",", "."))) * 1000
         adjusted_time = time_in_ms + end_time_srt1
-        ms = adjusted_time % 1000
-        seconds = (adjusted_time // 1000) % 60
-        minutes = (adjusted_time // (1000 * 60)) % 60
-        hours = (adjusted_time // (1000 * 60 * 60))
+        ms = int(adjusted_time % 1000)
+        seconds = int((adjusted_time // 1000) % 60)
+        minutes = int((adjusted_time // (1000 * 60)) % 60)
+        hours = int((adjusted_time // (1000 * 60 * 60)))
         end_adjusted = f"{hours:02d}:{minutes:02d}:{seconds:02d},{ms:03d}"
         srt2_adjusted.append({
             "id": subtitle["id"] + len(srt1_parsed),
@@ -85,7 +86,6 @@ def merge_multi_srt_items(*items: SrtItem) -> SrtItem:
     }
 
 def merge_multiple_srt_strings(*srts: str) -> str:
-    print(srts)
     first_srt, *remaining_srts = srts
     merged_srt_string = first_srt
     for srt in remaining_srts:
