@@ -138,8 +138,8 @@ def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
         update_credit_record(transcript_file_task_add.request.id, user['sub'], -duration, len(audio), 'audio')
-        print(merge_multiple_srt_strings)
-        srts = parse_srt(merge_multiple_srt_strings(results)) # type: ignore
+        srts = parse_srt(merge_multiple_srt_strings(*results)) # type: ignore
+        # Save subtitles
         save_result(srts, transcript_file_task_add.request.id)
         print('Request sent')
         return results

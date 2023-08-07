@@ -28,12 +28,28 @@ class TestUtilsMethods(unittest.TestCase):
     Sixth subtitle
     """
         expected_result = """1
-    00:00:00,000 --> 00:01:01,000
-    First subtitle Second subtitle Third subtitle
+    00:00:00,000 --> 00:00:01,000
+    First subtitle
 
-    2
-    00:01:01,000 --> 00:01:02,000
-    Fourth subtitle Fifth subtitle Sixth subtitle"""
+2
+    00:00:01,000 --> 00:01:00,000
+    Second subtitle
+
+3
+00:01:00,000 --> 00:01:01,000
+    Third subtitle
+
+4
+00:01:01,000 --> 00:01:00,000
+    Fourth subtitle
+
+5
+00:01:00,000 --> 00:01:01,000
+    Fifth subtitle
+
+6
+00:01:01,000 --> 00:01:02,000
+    Sixth subtitle"""
         merged = merge_multiple_srt_strings(srt1, srt2, srt3)
         print(merged, expected_result, sep="\n")
         assert merged == expected_result
