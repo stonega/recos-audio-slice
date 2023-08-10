@@ -110,6 +110,9 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         update_credit_record( transcript_task_add.request.id, user['sub'], -duration, len(audio), type)
+        srts = parse_srt(merge_multiple_srt_strings(*results)) # type: ignore
+        # Save subtitles
+        save_subtitle_result(srts, transcript_task_add.request.id)
         return results
     else:
         return 'Failed to fetch url'
