@@ -69,6 +69,7 @@ def save_subtitle_result(srt_items: List[SrtItem], task_id: str):
     conn.commit()
     return cursor.rowcount
 
+
 def get_subtitle_result(task_id: str):
     print('get subtitle result...')
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))

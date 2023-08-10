@@ -303,8 +303,10 @@ def get_status(task_id):
     }
     return JSONResponse(result)
 
+
 @app.get("/transcript-result/{task_id}")
 def get_transcript_result(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     results = get_subtitle_result(task_id)
-    subtitles = list(map(lambda s: {'id': s[3], 'text': s[4], 'startTimestamp': s[5], 'endTimestamp': s[6]}, results))
+    subtitles = list(map(lambda s: {
+                     'id': s[3], 'text': s[4], 'startTimestamp': s[5], 'endTimestamp': s[6]}, results))
     return JSONResponse(subtitles)

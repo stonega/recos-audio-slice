@@ -17,18 +17,23 @@ from database import get_user_credit, save_subtitle_result, update_credit_record
 from utils import merge_multiple_srt_strings, parse_srt
 
 load_dotenv()
-celery = Celery('recos', broker=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"), backend=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"))
+celery = Celery('recos', broker=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"),
+                backend=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"))
 celery.conf.task_serializer = 'pickle'
 celery.conf.result_serializer = 'pickle'
-celery.conf.accept_content = ['application/json', 'pickle', 'application/x-python-serialize']
+celery.conf.accept_content = ['application/json',
+                              'pickle', 'application/x-python-serialize']
 
 ONE_MINUTE = 1000*60
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "_")
 ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
 
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 def slice_audio(audio, slice_duration):
     startTime = datetime.now()
     slices = []
@@ -44,6 +49,8 @@ def slice_audio(audio, slice_duration):
     endTime = datetime.now()
     print('Slicing took', endTime - startTime)
     return slices
+
+
 def export_mp3(audio):
     start_time = datetime.now()
     filename = '/tmp/' + str(uuid.uuid4()) + '.mp3'
@@ -51,6 +58,8 @@ def export_mp3(audio):
     end_time = datetime.now()
     print('Audio saved', filename,  end_time - start_time, sep="---")
     return filename
+
+
 def transcribe_audio(filename, format, prompt):
     print('Request openapi', filename, format, prompt, sep="---")
     with open(filename, "rb") as f:
@@ -59,7 +68,8 @@ def transcribe_audio(filename, format, prompt):
         os.remove(filename)
         return transcript
 
-def get_youtube_audio_url (link):
+
+def get_youtube_audio_url(link):
     print('Transcribing youtube', link)
     yt = YouTube(link)
     audio = yt.streams.filter(only_audio=True).first()
@@ -67,6 +77,7 @@ def get_youtube_audio_url (link):
         return 'Failed to fetch url'
     else:
         return audio.url
+
 
 @celery.task(name="transcript.add")
 def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
@@ -106,16 +117,18 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
             files.append(export_mp3(audio))
         # Transcribe
         results = []
-        inputs = list(map(lambda file:(file, format, prompt), files))
+        inputs = list(map(lambda file: (file, format, prompt), files))
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
-        update_credit_record( transcript_task_add.request.id, user['sub'], -duration, len(audio), type)
-        srts = parse_srt(merge_multiple_srt_strings(*results)) # type: ignore
+        update_credit_record(transcript_task_add.request.id,
+                             user['sub'], -duration, len(audio), type)
+        srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
         # Save subtitles
         save_subtitle_result(srts, transcript_task_add.request.id)
         return results
     else:
         return 'Failed to fetch url'
+
 
 @celery.task(name="transcript-file.add")
 def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False, prompt: str = ''):
@@ -136,19 +149,21 @@ def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False
             files.append(export_mp3(audio))
         results = []
         # Transcribe
-        inputs = list(map(lambda file:(file, format, prompt), files))
+        inputs = list(map(lambda file: (file, format, prompt), files))
         with multiprocessing.Pool(processes=len(inputs)) as pool:
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
-        update_credit_record(transcript_file_task_add.request.id, user['sub'], -duration, len(audio), 'audio')
-        srts = parse_srt(merge_multiple_srt_strings(*results)) # type: ignore
+        update_credit_record(transcript_file_task_add.request.id,
+                             user['sub'], -duration, len(audio), 'audio')
+        srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
         # Save subtitles
         save_subtitle_result(srts, transcript_file_task_add.request.id)
         print('Request sent')
         return results
     else:
         return 'File not allowed'
-    
+
+
 @task_postrun.connect
 def task_sent_handler(task_id, task, args, kwargs, retval, state, **extra_info):
     print('task_postrun for task id {taskId}', task_id)
