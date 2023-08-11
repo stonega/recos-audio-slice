@@ -128,11 +128,12 @@ def export_mp3(audio):
 
 
 def save_file(file):
-    id = str(uuid.uuid4()) + '_' + file.filename
+    id = str(uuid.uuid4())
     file_extension = file.filename.split('.')[-1]
     filename = '/files/' + id + '.' + file_extension
     with open(filename, "wb+") as file_object:
         file_object.write(file.file.read())
+        file_object.close()
     print('Audio saved', filename)
     return filename
 
