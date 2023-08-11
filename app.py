@@ -29,12 +29,13 @@ from worker import celery
 
 load_dotenv()
 
+VOLUME_PATH = os.environ.get('RAILWAY_VOLUME_MOUNT_PATH', '/external')
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "_")
 ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
 ONE_MINUTE = 1000*60
 app = FastAPI()
 
-app.mount("/files", StaticFiles(directory="/files"), name="files")
+app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
 
 origins = [
     "https://recos.vercel.app",
@@ -130,8 +131,8 @@ def export_mp3(audio):
 def save_file(file):
     id = str(uuid.uuid4())
     file_extension = file.filename.split('.')[-1]
-    filename = '/files/' + id + '.' + file_extension
-    with open(filename, "wb+") as file_object:
+    filename = id + '.' + file_extension
+    with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
         file_object.write(file.file.read())
         file_object.close()
     print('Audio saved', filename)
@@ -288,13 +289,16 @@ def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_
 
 @app.post("/transcript-task")
 async def transcript_file_task(file: UploadFile, current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
-    file_bytes = await file.read()
-    filename = save_file(file)
-    task = transcript_file_task_add.delay(
-        file_bytes, file.filename, current_user, srt, prompt)
-    add_credit_record(
-        task.id, current_user['sub'], file.filename, 'audio', filename)
-    return JSONResponse({"task_id": task.id})
+    if file and allowed_file(file.filename):
+        file_bytes = await file.read()
+        filename = save_file(file)
+        task = transcript_file_task_add.delay(
+            file_bytes, file.filename, current_user, srt, prompt)
+        add_credit_record(
+            task.id, current_user['sub'], file.filename, 'audio', filename)
+        return JSONResponse({"task_id": task.id})
+    else:
+        raise HTTPException(status_code=404, detail="File not support")
 
 
 @app.get("/tasks/{task_id}")
