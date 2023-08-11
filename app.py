@@ -132,7 +132,7 @@ def save_file(file: UploadFile):
     id = str(uuid.uuid4())
     file_extension = file.filename.split('.')[-1]
     filename = id + '.' + file_extension
-    with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
+    with open(VOLUME_PATH + '/' + filename, "wb") as file_object:
         file_object.write(file.file.read())
         file_object.close()
         print('Audio saved', filename)
