@@ -34,7 +34,7 @@ ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
 ONE_MINUTE = 1000*60
 app = FastAPI()
 
-app.mount("/files", StaticFiles(directory="/tmp"), name="files")
+app.mount("/files", StaticFiles(directory="/files"), name="files")
 
 origins = [
     "https://recos.vercel.app",
@@ -129,11 +129,12 @@ def export_mp3(audio):
 
 def save_file(file):
     id = str(uuid.uuid4()) + '_' + file.filename
-    filename = '/tmp/' + id
+    file_extension = file.filename.split('.')[-1]
+    filename = '/files/' + id + '.' + file_extension
     with open(filename, "wb+") as file_object:
         file_object.write(file.file.read())
     print('Audio saved', filename)
-    return id
+    return filename
 
 
 def transcribe_audio(filename, format, prompt):
@@ -280,16 +281,18 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
 def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
     task = transcript_task_add.delay(
         url, current_user, title, srt, prompt, type)
-    add_credit_record(task.id, current_user['sub'], title, 'audio')
+    add_credit_record(task.id, current_user['sub'], title, 'audio', url)
     return JSONResponse({"task_id": task.id})
 
 
 @app.post("/transcript-task")
 async def transcript_file_task(file: UploadFile, current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
     file_bytes = await file.read()
+    filename = save_file(file)
     task = transcript_file_task_add.delay(
         file_bytes, file.filename, current_user, srt, prompt)
-    add_credit_record(task.id, current_user['sub'], file.filename, 'audio')
+    add_credit_record(
+        task.id, current_user['sub'], file.filename, 'audio', filename)
     return JSONResponse({"task_id": task.id})
 
 
@@ -302,11 +305,3 @@ def get_status(task_id):
         "task_result": task_result.result
     }
     return JSONResponse(result)
-
-
-@app.get("/transcript-result/{task_id}")
-def get_transcript_result(task_id, current_user: Annotated[User, Depends(get_current_user)]):
-    results = get_subtitle_result(task_id)
-    subtitles = list(map(lambda s: {
-                     'id': s[3], 'text': s[4], 'startTimestamp': s[5], 'endTimestamp': s[6]}, results))
-    return JSONResponse(subtitles)
