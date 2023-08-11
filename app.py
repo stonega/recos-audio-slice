@@ -128,15 +128,15 @@ def export_mp3(audio):
     return filename
 
 
-def save_file(file):
+def save_file(file: UploadFile):
     id = str(uuid.uuid4())
     file_extension = file.filename.split('.')[-1]
     filename = id + '.' + file_extension
     with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
         file_object.write(file.file.read())
         file_object.close()
-    print('Audio saved', filename)
-    return filename
+        print('Audio saved', filename)
+        return filename
 
 
 def transcribe_audio(filename, format, prompt):
