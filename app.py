@@ -292,13 +292,13 @@ def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_
 @app.post("/transcript-task")
 async def transcript_file_task(file: UploadFile, current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
     if file and allowed_file(file.filename):
-        filename = save_file(file)
+        filename = 'audio.mp3' if file.filename is None else file.filename
+        file_extension = os.path.splitext(filename)[1]
+        file_name = os.path.splitext(filename)[0]
         file_bytes = await file.read()
         id = str(uuid.uuid4())
         if file.filename is None:
             return
-        file_extension = file.filename.split('.')[-1]
-        file_name = os.path.splitext(file.filename)[0]
         filename = id + '.' + file_extension
         with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
             shutil.copyfileobj(file.file, file_object)
