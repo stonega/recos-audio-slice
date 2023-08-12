@@ -1,5 +1,6 @@
 import os
 import io
+import shutil
 import zipfile
 import openai
 import uuid
@@ -130,13 +131,17 @@ def export_mp3(audio):
 
 def save_file(file: UploadFile):
     id = str(uuid.uuid4())
+    if file.filename is None:
+        return
     file_extension = file.filename.split('.')[-1]
     filename = id + '.' + file_extension
-    with open(VOLUME_PATH + '/' + filename, "wb") as file_object:
-        file_object.write(file.file.read())
-        file_object.close()
-        print('Audio saved', filename)
-        return filename
+    try:
+        with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
+            shutil.copyfileobj(file.file, file_object)
+            print('Audio saved', filename)
+    finally:
+        file.file.close()
+    return filename
 
 
 def transcribe_audio(filename, format, prompt):
