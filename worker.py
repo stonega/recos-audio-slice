@@ -125,43 +125,40 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
         # Save subtitles
         save_subtitle_result(srts, transcript_task_add.request.id)
-        return results
+        return
     else:
-        return 'Failed to fetch url'
+        transcript_task_add.update_state(state='FAILURE', meta={'exc': 'Failed to fetch audio'})
 
 
 @celery.task(name="transcript-file.add")
 def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False, prompt: str = ''):
-    if file and allowed_file(filename):
-        credit = get_user_credit(user['sub'])
-        audio = AudioSegment.from_file(io.BytesIO(file))
-        duration = round(len(audio) / ONE_MINUTE)
-        if (duration > credit):
-            return 'Insufficient credit'
-        format = 'srt' if srt else 'text'
+    credit = get_user_credit(user['sub'])
+    audio = AudioSegment.from_file(io.BytesIO(file))
+    duration = round(len(audio) / ONE_MINUTE)
+    if (duration > credit):
+        return 'Insufficient credit'
+    format = 'srt' if srt else 'text'
+    print('Audio length:', len(audio))
+    # Slice into max 20-minute chunks
+    sliced_audios = slice_audio(audio, 20 * 60 * 1000)
+    # Export audio files
+    files = []
+    for audio in sliced_audios:
         print('Audio length:', len(audio))
-        # Slice into max 20-minute chunks
-        sliced_audios = slice_audio(audio, 20 * 60 * 1000)
-        # Export audio files
-        files = []
-        for audio in sliced_audios:
-            print('Audio length:', len(audio))
-            files.append(export_mp3(audio))
-        results = []
-        # Transcribe
-        inputs = list(map(lambda file: (file, format, prompt), files))
-        with multiprocessing.Pool(processes=len(inputs)) as pool:
-            results = pool.starmap(transcribe_audio, inputs)
-        # Update user credit
-        update_credit_record(transcript_file_task_add.request.id,
-                             user['sub'], -duration, len(audio), 'audio')
-        srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
-        # Save subtitles
-        save_subtitle_result(srts, transcript_file_task_add.request.id)
-        print('Request sent')
-        return results
-    else:
-        return 'File not allowed'
+        files.append(export_mp3(audio))
+    results = []
+    # Transcribe
+    inputs = list(map(lambda file: (file, format, prompt), files))
+    with multiprocessing.Pool(processes=len(inputs)) as pool:
+        results = pool.starmap(transcribe_audio, inputs)
+    # Update user credit
+    update_credit_record(transcript_file_task_add.request.id,
+                            user['sub'], -duration, len(audio), 'audio')
+    srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
+    # Save subtitles
+    save_subtitle_result(srts, transcript_file_task_add.request.id)
+    print('Request sent')
+    return
 
 
 @task_postrun.connect
