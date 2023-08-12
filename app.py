@@ -12,7 +12,7 @@ from jose import jwe
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, BinaryIO
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -301,7 +301,7 @@ async def transcript_file_task(file: UploadFile, current_user: Annotated[User, D
             return
         filename = id + '.' + file_extension
         with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
-            shutil.copyfileobj(file.file, file_object)
+            shutil.copyfileobj(io.BytesIO(file_bytes), file_object)
             print('Audio saved', filename)
         task = transcript_file_task_add.delay(
             file_bytes, current_user, srt, prompt)
