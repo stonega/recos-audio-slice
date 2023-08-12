@@ -295,8 +295,8 @@ def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_
 @app.post("/transcript-task")
 async def transcript_file_task(file: UploadFile, current_user: Annotated[User, Depends(get_current_user)], prompt:  Annotated[str, Form()] = '', srt: Annotated[bool, Form()] = False):
     if file and allowed_file(file.filename):
-        file_bytes = await file.read()
         filename = save_file(file)
+        file_bytes = await file.read()
         task = transcript_file_task_add.delay(
             file_bytes, file.filename, current_user, srt, prompt)
         add_credit_record(
