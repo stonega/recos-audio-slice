@@ -131,7 +131,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
 
 
 @celery.task(name="transcript-file.add")
-def transcript_file_task_add(file: bytes, filename: str, user, srt: bool = False, prompt: str = ''):
+def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str = ''):
     credit = get_user_credit(user['sub'])
     audio = AudioSegment.from_file(io.BytesIO(file))
     duration = round(len(audio) / ONE_MINUTE)

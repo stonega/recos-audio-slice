@@ -301,12 +301,12 @@ async def transcript_file_task(file: UploadFile, current_user: Annotated[User, D
         file_name = os.path.splitext(file.filename)[0]
         filename = id + '.' + file_extension
         with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
-            file_object.write(file_bytes)
+            shutil.copyfileobj(file.file, file_object)
             print('Audio saved', filename)
         task = transcript_file_task_add.delay(
-            file_bytes, file_name, current_user, srt, prompt)
+            file_bytes, current_user, srt, prompt)
         add_credit_record(
-            task.id, current_user['sub'], file.filename, 'audio', filename)
+            task.id, current_user['sub'], file_name, 'audio', filename)
         return JSONResponse({"task_id": task.id})
     else:
         raise HTTPException(status_code=404, detail="File not support")
