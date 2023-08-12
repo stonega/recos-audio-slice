@@ -135,12 +135,9 @@ def save_file(file: UploadFile):
         return
     file_extension = file.filename.split('.')[-1]
     filename = id + '.' + file_extension
-    try:
-        with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
-            shutil.copyfileobj(file.file, file_object)
-            print('Audio saved', filename)
-    finally:
-        file.file.close()
+    with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
+        shutil.copyfileobj(file.file, file_object)
+        print('Audio saved', filename)
     return filename
 
 
