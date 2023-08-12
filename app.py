@@ -294,8 +294,17 @@ async def transcript_file_task(file: UploadFile, current_user: Annotated[User, D
     if file and allowed_file(file.filename):
         filename = save_file(file)
         file_bytes = await file.read()
+        id = str(uuid.uuid4())
+        if file.filename is None:
+            return
+        file_extension = file.filename.split('.')[-1]
+        file_name = os.path.splitext(file.filename)[0]
+        filename = id + '.' + file_extension
+        with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
+            file_object.write(file_bytes)
+            print('Audio saved', filename)
         task = transcript_file_task_add.delay(
-            file_bytes, file.filename, current_user, srt, prompt)
+            file_bytes, file_name, current_user, srt, prompt)
         add_credit_record(
             task.id, current_user['sub'], file.filename, 'audio', filename)
         return JSONResponse({"task_id": task.id})
