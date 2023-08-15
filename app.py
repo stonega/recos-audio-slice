@@ -299,7 +299,7 @@ async def transcript_file_task(file: UploadFile, current_user: Annotated[User, D
         id = str(uuid.uuid4())
         if file.filename is None:
             return
-        filename = id + '.' + file_extension
+        filename = id + file_extension
         with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
             shutil.copyfileobj(io.BytesIO(file_bytes), file_object)
             print('Audio saved', filename)
