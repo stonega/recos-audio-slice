@@ -12,5 +12,7 @@ async def do_insert(srt_items: List[dict], task_id: str):
 
 
 def save_subtitle_result_to_mongodb(srt_items, task_id: str):
+    new_loop = client.new_event_loop()
+    client.set_event_loop(new_loop)
     loop = client.get_io_loop()
     loop.run_until_complete(do_insert(srt_items=srt_items, task_id=task_id))
