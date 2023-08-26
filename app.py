@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 from database import add_credit_record, get_subtitle_result, get_user_credit, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
+from mongodb import get_subtitles_from_mongodb
 
 from worker import transcript_file_task_add, transcript_task_add
 from worker import celery
@@ -36,7 +37,7 @@ ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
 ONE_MINUTE = 1000*60
 app = FastAPI()
 
-# app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
+app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
 
 origins = [
     "https://recos.vercel.app",
@@ -320,4 +321,9 @@ def get_status(task_id):
         "task_status": task_result.status,
         "task_result": task_result.result
     }
+    return JSONResponse(result)
+
+@app.get("/subtitles/{task_id}")
+def get_subtitles(task_id):
+    result = get_subtitles_from_mongodb(task_id)
     return JSONResponse(result)
