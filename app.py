@@ -36,7 +36,7 @@ ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
 ONE_MINUTE = 1000*60
 app = FastAPI()
 
-app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
+# app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
 
 origins = [
     "https://recos.vercel.app",

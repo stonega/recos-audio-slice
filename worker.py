@@ -14,6 +14,7 @@ import requests
 from celery.signals import task_postrun
 
 from database import get_user_credit, save_subtitle_result, update_credit_record
+from mongodb import save_subtitle_result_to_mongodb
 from utils import merge_multiple_srt_strings, parse_srt
 
 load_dotenv()
@@ -131,7 +132,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
 
 
 @celery.task(name="transcript-file.add")
-def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str = ''):
+async def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str = ''):
     credit = get_user_credit(user['sub'])
     audio = AudioSegment.from_file(io.BytesIO(file))
     duration = round(len(audio) / ONE_MINUTE)
@@ -157,6 +158,7 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
     srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
     # Save subtitles
     save_subtitle_result(srts, transcript_file_task_add.request.id)
+    await save_subtitle_result_to_mongodb(srts, transcript_file_task_add.request.id)
     print('Request sent')
     return
 
