@@ -324,6 +324,8 @@ def get_status(task_id):
     return JSONResponse(result)
 
 @app.get("/subtitles/{task_id}")
-def get_subtitles(task_id):
+def get_subtitles(task_id, current_user: Annotated[User, Depends(get_current_user)]):
+    user_id = current_user['sub']
+    
     result = get_subtitles_from_mongodb(task_id)
     return JSONResponse(result)
