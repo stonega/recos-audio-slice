@@ -11,9 +11,9 @@ asyncio.set_event_loop(loop)
 async def do_insert(srt_items: List[dict], task_id: str):
     for srt in srt_items:
         srt['task_id'] = task_id
-    await db.subtitles.insert_many(srt_items)
+    await db.subtitle.insert_many(srt_items)
 async def do_find(task_id: str):
-    cursor = db.subtitles.find({'task_id': {'$eq': task_id}}).sort('subtitle_id')
+    cursor = db.subtitle.find({'task_id': {'$eq': task_id}}).sort('subtitle_id')
     result = []
     for document in await cursor.to_list(length=100): # type: ignore
         document.pop('_id')
