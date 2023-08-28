@@ -13,7 +13,7 @@ from tqdm import tqdm
 import requests
 from celery.signals import task_postrun
 
-from database import get_user_credit, save_subtitle_result, update_credit_record
+from database import get_user_credit, update_credit_record
 from mongodb import save_subtitle_result_to_mongodb
 from utils import merge_multiple_srt_strings, parse_srt
 
