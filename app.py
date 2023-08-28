@@ -283,10 +283,10 @@ def transcript_file(file: UploadFile,  current_user: Annotated[User, Depends(get
 
 
 @app.get("/transcript-task")
-def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
+def transcript_task(url: str, current_user: Annotated[User, Depends(get_current_user)], title: str = '', srt: bool = False, prompt: str = '', type: str = 'podcast', audio_image: str = ""):
     task = transcript_task_add.delay(
         url, current_user, title, srt, prompt, type)
-    add_credit_record(task.id, current_user['sub'], title, 'audio', url)
+    add_credit_record(task.id, current_user['sub'], title, type, url, audio_image)
     return JSONResponse({"task_id": task.id})
 
 

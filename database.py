@@ -24,11 +24,11 @@ def get_user_credit(user_id: str):
     return user[-1]
 
 
-def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, audio_url: str):
+def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, audio_url: str, audio_image: str = ""):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
-    insert = """INSERT INTO "Credit" (id, name, "userId", type, "audio_url") VALUES ( %s, %s, %s, %s, %s);"""
-    cursor.execute(insert, (task_id, name, user_id, type, audio_url))
+    insert = """INSERT INTO "Credit" (id, name, "userId", type, "audio_url", "audio_image") VALUES ( %s, %s, %s, %s, %s, %s);"""
+    cursor.execute(insert, (task_id, name, user_id, type, audio_url, audio_image))
     conn.commit()
     return cursor.rowcount
 
