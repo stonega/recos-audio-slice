@@ -39,7 +39,7 @@ def update_credit_record(task_id: str, user_id: str, credit: int, duration: int,
     cursor = conn.cursor()
     update_query = """UPDATE "User" SET credit = credit + %s WHERE id = %s;"""
     cursor.execute(update_query, (credit, user_id))
-    insert = """UPDATE "Credit" SET credit = %s, audio_length = %s, type = %s, status = 'success' WHERE ID = %s;"""
+    insert = """UPDATE "Credit" SET credit = %s, audio_length = %s, type = %s, status = 'completed' WHERE ID = %s;"""
     cursor.execute(insert, (-credit, duration, type, task_id))
     conn.commit()
     return cursor.rowcount
