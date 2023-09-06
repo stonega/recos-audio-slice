@@ -347,7 +347,7 @@ def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)
     return JSONResponse(summary)
 
 @app.get("/subtitles/recos/{task_id}")
-def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)]):
+def get_recos(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
     result = get_subtitles_from_mongodb(task_id)    
     recos = subtitle_recos(result)
