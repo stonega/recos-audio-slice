@@ -46,10 +46,10 @@ def num_tokens_from_messages(message, model="gpt-3.5-turbo-0301"):
     else:
         raise NotImplementedError(f"""error.""")
 
-def summary(text, output_language):
+def get_recos(text):
 
     prompt_text = f"""
-I want you to act as a text summarizer to help me create a summary of the text I provide. The summary should be in {output_language} and should be no more than 1000 words.Text:
+I want you to extract info from text if any movies books you found.Return the item list split with \n, make sure not include any other text like The text mentions, Text:
 {text}"""
     print(prompt_text)
     try:
@@ -108,8 +108,7 @@ I want you to act as a text summarizer to help me create a summary of the text I
     return t_text
 
 
-def subtitle_summary(subtitles, output_language):
-
+def subtitle_recos(subtitles):
     openai.api_key = os.getenv("OPENAI_API_KEY")
     ntokens = []
     chunks = []
@@ -119,11 +118,10 @@ def subtitle_summary(subtitles, output_language):
         ntokens.append(num_tokens_from_messages(chunk))
 
     chunks = group_chunks(chunks, ntokens)
-    summary_chunks = []
+    recos_chunks = []
     for i, chunk in enumerate(chunks):
         print(str(i+1) + " / " + str(len(chunks)))
-        summary_chunks.append(summary(chunk, output_language)+"\n")
-
-    result = summary_chunks[0] if len(summary_chunks) == 1 else summary("\n".join(summary_chunks), output_language)
+        recos_chunks.append(get_recos(chunk)+"\n")
+    result = "\n".join(recos_chunks)
 
     return result

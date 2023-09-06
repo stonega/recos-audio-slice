@@ -50,10 +50,14 @@ async def do_summary_insert(summary: str, task_id: str):
     if document is None:
         await db.summary.insert_one({'summary': summary, 'task_id': task_id})
     else:
-        await db.summary.replace_one({'task_id': task_id}, {'summary': summary, 'task_id': task_id}) 
+        await db.summary.update_one({'task_id': task_id}, {'summary': summary}) 
 
-async def do_summary_update(summary: dict):
-    await db.summary.replace_one({'id': summary['id'], 'task_id': ['task_id']}, summary)
+async def do_recos_insert(recos: str, task_id: str):
+    document = await db.summary.find_one({'task_id': {'$eq': task_id}})
+    if document is None:
+        await db.summary.insert_one({'recos': recos, 'task_id': task_id})
+    else:
+        await db.summary.update_one({'task_id': task_id}, {'recos': recos}) 
 
 def save_subtitle_summary_to_mongodb(summary, task_id: str):
     loop = asyncio.new_event_loop()
@@ -61,8 +65,8 @@ def save_subtitle_summary_to_mongodb(summary, task_id: str):
     loop = client.get_io_loop()
     loop.run_until_complete(do_summary_insert(summary, task_id=task_id))
 
-def update_subtitle_summary_to_mongodb(summary):
+def save_subtitle_recos_to_mongodb(recos, task_id: str):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop = client.get_io_loop()
-    loop.run_until_complete(do_summary_update(summary))
+    loop.run_until_complete(do_recos_insert(recos, task_id=task_id))

@@ -25,7 +25,8 @@ from dotenv import load_dotenv
 from database import add_credit_record, get_subtitle_result, get_user_credit, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
-from mongodb import get_subtitles_from_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb, update_subtitle_summary_to_mongodb
+from mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
+from recos import subtitle_recos
 from summary import subtitle_summary
 from translate import translate_gpt
 
@@ -40,7 +41,7 @@ ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
 ONE_MINUTE = 1000*60
 app = FastAPI()
 
-# app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
+app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
 
 origins = [
     "https://recos.vercel.app",
@@ -344,3 +345,11 @@ def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)
     summary = subtitle_summary(result, lang)
     save_subtitle_summary_to_mongodb(summary, task_id)
     return JSONResponse(summary)
+
+@app.get("/subtitles/recos/{task_id}")
+def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)]):
+    user_id = current_user['sub']
+    result = get_subtitles_from_mongodb(task_id)    
+    recos = subtitle_recos(result)
+    save_subtitle_recos_to_mongodb(recos, task_id)
+    return JSONResponse(recos)
