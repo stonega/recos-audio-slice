@@ -330,15 +330,17 @@ def get_status(task_id):
 @app.get("/subtitles/translate/{task_id}")
 def get_subtitles(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
+    lang = current_user['lang']
     result = get_subtitles_from_mongodb(task_id)    
-    subtitles = translate_gpt(result, 'Chinese')
+    subtitles = translate_gpt(result, lang)
     update_subtitle_result_to_mongodb(subtitles)
     return JSONResponse(result)
 
 @app.get("/subtitles/summary/{task_id}")
 def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
+    lang = current_user['lang']
     result = get_subtitles_from_mongodb(task_id)    
-    summary = subtitle_summary(result, 'Chinese')
+    summary = subtitle_summary(result, lang)
     save_subtitle_summary_to_mongodb(summary, task_id)
     return JSONResponse(summary)
