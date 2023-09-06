@@ -1,6 +1,7 @@
 import os
 import io
 import shutil
+import time
 import zipfile
 import openai
 import uuid
@@ -12,7 +13,7 @@ from jose import jwe
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from datetime import datetime
-from typing import Annotated, BinaryIO
+from typing import Annotated, BinaryIO, List, NamedTuple
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -24,7 +25,9 @@ from dotenv import load_dotenv
 from database import add_credit_record, get_subtitle_result, get_user_credit, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
-from mongodb import get_subtitles_from_mongodb
+from mongodb import get_subtitles_from_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb, update_subtitle_summary_to_mongodb
+from summary import subtitle_summary
+from translate import translate_gpt
 
 from worker import transcript_file_task_add, transcript_task_add
 from worker import celery
@@ -37,7 +40,7 @@ ALLOWED_EXTENSIONS = {'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'}
 ONE_MINUTE = 1000*60
 app = FastAPI()
 
-app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
+# app.mount("/files", StaticFiles(directory=VOLUME_PATH), name="files")
 
 origins = [
     "https://recos.vercel.app",
@@ -323,9 +326,19 @@ def get_status(task_id):
     }
     return JSONResponse(result)
 
-@app.get("/subtitles/{task_id}")
+
+@app.get("/subtitles/translate/{task_id}")
 def get_subtitles(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
-    
-    result = get_subtitles_from_mongodb(task_id)
+    result = get_subtitles_from_mongodb(task_id)    
+    subtitles = translate_gpt(result, 'Chinese')
+    update_subtitle_result_to_mongodb(subtitles)
     return JSONResponse(result)
+
+@app.get("/subtitles/summary/{task_id}")
+def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)]):
+    user_id = current_user['sub']
+    result = get_subtitles_from_mongodb(task_id)    
+    summary = subtitle_summary(result, 'Chinese')
+    save_subtitle_summary_to_mongodb(summary, task_id)
+    return JSONResponse(summary)

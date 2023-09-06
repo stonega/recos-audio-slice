@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "asgi",
         "cuid",
         "dotenv",
         "executemany",
@@ -7,14 +8,18 @@
         "hkdf",
         "httpx",
         "jsonify",
+        "micromamba",
         "modelz",
         "mpga",
+        "ntokens",
         "postrun",
         "pydantic",
         "pydub",
         "pytube",
         "recos",
         "srts",
+        "subtltles",
+        "tiktoken",
         "tqdm",
         "uvicorn",
         "zipf"
