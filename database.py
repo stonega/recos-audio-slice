@@ -23,6 +23,19 @@ def get_user_credit(user_id: str):
         return 0
     return user[-1]
 
+def get_user_lang(user_id: str):
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+    cursor = conn.cursor()
+    select_query = """SELECT * FROM "User" where id = %s;"""
+    cursor.execute(select_query, (user_id,))
+    user = cursor.fetchone()
+    if user is None:
+        insert = """INSERT INTO "User" (id, credit) VALUES ( %s, %s);"""
+        cursor.execute(insert, (user_id, 0))
+        conn.commit()
+        return 0
+    return user[-2]
+
 
 def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, audio_url: str, audio_image: str = ""):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))

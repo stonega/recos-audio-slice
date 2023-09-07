@@ -49,7 +49,7 @@ def num_tokens_from_messages(message, model="gpt-3.5-turbo-0301"):
 def get_recos(text):
 
     prompt_text = f"""
-I want you to extract info from text if any movies books you found.Return the item list split with \n, make sure not include any other text like The text mentions, Text:
+I want you to extract info from text if any movies books you found.Return the item list split with |, make sure not include any other text like The text mentions, Text:
 {text}"""
     print(prompt_text)
     try:

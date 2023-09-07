@@ -22,7 +22,7 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from database import add_credit_record, get_subtitle_result, get_user_credit, update_user_credit
+from database import add_credit_record, get_subtitle_result, get_user_credit, get_user_lang, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
 from mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
@@ -55,6 +55,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class User(BaseModel):
     sub: str
     email: str | None = None
+    lang: str | None = None
     name: str | None = None
     disabled: bool | None = None
 
@@ -340,7 +341,7 @@ def get_subtitles(task_id, current_user: Annotated[User, Depends(get_current_use
 @app.get("/subtitles/summary/{task_id}")
 def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
-    lang = current_user['lang']
+    lang = get_user_lang(user_id)
     result = get_subtitles_from_mongodb(task_id)    
     summary = subtitle_summary(result, lang)
     save_subtitle_summary_to_mongodb(summary, task_id)
