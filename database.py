@@ -21,7 +21,7 @@ def get_user_credit(user_id: str):
         cursor.execute(insert, (user_id, 0))
         conn.commit()
         return 0
-    return user[-1]
+    return user[-2]
 
 def get_user_lang(user_id: str):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
@@ -34,7 +34,7 @@ def get_user_lang(user_id: str):
         cursor.execute(insert, (user_id, 0))
         conn.commit()
         return 0
-    return user[-2]
+    return user[-1]
 
 
 def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, audio_url: str, audio_image: str = ""):
