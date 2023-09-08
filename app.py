@@ -349,6 +349,7 @@ def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)
     else:
         task = get_subtitles_summary.delay(
             task_id, lang)
+        save_subtitles_task('summary', task_id, task.id)
         return JSONResponse({'task_id': task.id})
 
 @app.get("/subtitles/recos/{task_id}")
@@ -360,4 +361,5 @@ def get_recos(task_id, current_user: Annotated[User, Depends(get_current_user)])
     else:
         task = get_subtitles_recos.delay(
             task_id)
+        save_subtitles_task('recos', task_id, task.id)
         return JSONResponse({'task_id': task.id})
