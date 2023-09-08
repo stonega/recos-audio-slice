@@ -56,7 +56,7 @@ async def do_summary_insert(summary: str, task_id: str):
     if document is None:
         await db.summary.insert_one({'summary': summary, 'task_id': task_id})
     else:
-        await db.summary.update_one({'task_id': task_id}, {'$set': {'summary': summary}})
+        await db.summary.update_one({'task_id': {'$eq': task_id}}, {'$set': {'summary': summary}})
 
 
 async def do_recos_insert(recos: str, task_id: str):
@@ -64,7 +64,7 @@ async def do_recos_insert(recos: str, task_id: str):
     if document is None:
         await db.summary.insert_one({'recos': recos, 'task_id': task_id})
     else:
-        await db.summary.update_one({'task_id': task_id}, {'$set': {'recos': recos}})
+        await db.summary.update_one({'task_id': {'$eq': task_id}}, {'$set': {'recos': recos}})
 
 
 async def do_status_insert(task: str, task_id: str, current_task_id: str):
@@ -73,7 +73,7 @@ async def do_status_insert(task: str, task_id: str, current_task_id: str):
     if document is None:
         await db.summary.insert_one({key: current_task_id, 'task_id': task_id})
     else:
-        await db.summary.update_one({'task_id': task_id}, {'$set': {key: current_task_id}})
+        await db.summary.update_one({'task_id': {'$eq': task_id}}, {'$set': {key: current_task_id}})
 
 
 async def check_status(task: str, task_id: str):
