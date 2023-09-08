@@ -56,7 +56,7 @@ async def do_summary_insert(summary: str, task_id: str):
     if document is None:
         await db.summary.insert_one({'summary': summary, 'task_id': task_id})
     else:
-        await db.summary.update_one({'task_id': task_id}, {'summary': summary})
+        await db.summary.update_one({'task_id': task_id}, {'$set': {'summary': summary}})
 
 
 async def do_recos_insert(recos: str, task_id: str):
@@ -64,7 +64,7 @@ async def do_recos_insert(recos: str, task_id: str):
     if document is None:
         await db.summary.insert_one({'recos': recos, 'task_id': task_id})
     else:
-        await db.summary.update_one({'task_id': task_id}, {'recos': recos})
+        await db.summary.update_one({'task_id': task_id}, {'$set': {'recos': recos}})
 
 
 async def do_status_insert(task: str, task_id: str, current_task_id: str):
@@ -73,7 +73,7 @@ async def do_status_insert(task: str, task_id: str, current_task_id: str):
     if document is None:
         await db.summary.insert_one({key: current_task_id, 'task_id': task_id})
     else:
-        await db.summary.update_one({'task_id': task_id}, {key: current_task_id})
+        await db.summary.update_one({'task_id': task_id}, {'$set': {key: current_task_id}})
 
 
 async def check_status(task: str, task_id: str):
@@ -84,7 +84,7 @@ async def check_status(task: str, task_id: str):
     elif key not in document:
         return None
     else:
-        return document[key] 
+        return document[key]
 
 
 def save_subtitle_summary_to_mongodb(summary, task_id: str):
@@ -107,11 +107,13 @@ def save_subtitle_task_to_mongodb(recos, task_id: str):
     loop = client.get_io_loop()
     loop.run_until_complete(do_recos_insert(recos, task_id=task_id))
 
+
 def save_subtitles_task(task: str, task_id: str, current_task_id: str):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     loop = client.get_io_loop()
     loop.run_until_complete(do_status_insert(task, task_id, current_task_id))
+
 
 def check_subtitles_task(task: str, task_id: str):
     loop = asyncio.new_event_loop()
