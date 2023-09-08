@@ -1,7 +1,6 @@
 import os
 import io
 import shutil
-import time
 import zipfile
 import openai
 import uuid
@@ -13,7 +12,7 @@ from jose import jwe
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from datetime import datetime
-from typing import Annotated, BinaryIO, List, NamedTuple
+from typing import Annotated
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
@@ -22,15 +21,15 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from database import add_credit_record, get_subtitle_result, get_user_credit, get_user_lang, update_user_credit
+from database import add_credit_record, get_user_credit, get_user_lang, save_subtitle_result, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
-from mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
+from mongodb import check_subtitles_task, get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_summary_to_mongodb, save_subtitles_task, update_subtitle_result_to_mongodb
 from recos import subtitle_recos
 from summary import subtitle_summary
 from translate import translate_gpt
 
-from worker import transcript_file_task_add, transcript_task_add
+from worker import get_subtitles_recos, get_subtitles_summary, get_subtitles_translation, transcript_file_task_add, transcript_task_add
 from worker import celery
 
 load_dotenv()
@@ -332,25 +331,37 @@ def get_status(task_id):
 @app.get("/subtitles/translate/{task_id}")
 def get_subtitles(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
-    lang = current_user['lang']
-    result = get_subtitles_from_mongodb(task_id)    
-    subtitles = translate_gpt(result, lang)
-    update_subtitle_result_to_mongodb(subtitles)
-    return JSONResponse(result)
+    lang = get_user_lang(user_id)
+    running = check_subtitles_task('translate', task_id)
+    if running is None:
+        return JSONResponse({'task_id': running})
+    else:
+        task = get_subtitles_translation.delay(
+            task_id, lang)
+        save_subtitles_task('translate', task_id, task.id)
+        return JSONResponse({'task_id': task.id})
+
 
 @app.get("/subtitles/summary/{task_id}")
 def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
     lang = get_user_lang(user_id)
-    result = get_subtitles_from_mongodb(task_id)    
-    summary = subtitle_summary(result, lang)
-    save_subtitle_summary_to_mongodb(summary, task_id)
-    return JSONResponse(summary)
+    running = check_subtitles_task('summary', task_id)
+    if running is None:
+        return JSONResponse({'task_id': running})
+    else:
+        task = get_subtitles_summary.delay(
+            task_id, lang)
+        return JSONResponse({'task_id': task.id})
+
 
 @app.get("/subtitles/recos/{task_id}")
 def get_recos(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
-    result = get_subtitles_from_mongodb(task_id)    
-    recos = subtitle_recos(result)
-    save_subtitle_recos_to_mongodb(recos, task_id)
-    return JSONResponse(recos)
+    running = check_subtitles_task('summary', task_id)
+    if running is None:
+        return JSONResponse({'task_id': running})
+    else:
+        task = get_subtitles_recos.delay(
+            task_id)
+        return JSONResponse({'task_id': task.id})

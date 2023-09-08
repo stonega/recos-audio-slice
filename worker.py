@@ -14,7 +14,10 @@ import requests
 from celery.signals import task_postrun
 
 from database import get_user_credit, update_credit_record
-from mongodb import save_subtitle_result_to_mongodb
+from mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_result_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
+from recos import subtitle_recos
+from summary import subtitle_summary
+from translate import translate_gpt
 from utils import merge_multiple_srt_strings, parse_srt
 
 load_dotenv()
@@ -161,6 +164,26 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
     print('Request sent')
     return
 
+@celery.task(name="subtitles.translate")
+def get_subtitles_translation(task_id, lang):
+    result = get_subtitles_from_mongodb(task_id)    
+    subtitles = translate_gpt(result, lang)
+    update_subtitle_result_to_mongodb(subtitles)
+    return
+
+@celery.task(name="subtitles.summary")
+def get_subtitles_summary(task_id, lang):
+    result = get_subtitles_from_mongodb(task_id)    
+    summary = subtitle_summary(result, lang)
+    save_subtitle_summary_to_mongodb(summary, task_id)
+    return
+
+@celery.task(name="subtitles.recos")
+def get_subtitles_recos(task_id):
+    result = get_subtitles_from_mongodb(task_id)    
+    recos = subtitle_recos(result)
+    save_subtitle_recos_to_mongodb(recos, task_id)
+    return
 
 @task_postrun.connect
 def task_sent_handler(task_id, task, args, kwargs, retval, state, **extra_info):
