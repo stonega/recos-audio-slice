@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from datetime import datetime
 from typing import Annotated
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from pydub import AudioSegment
@@ -21,13 +21,10 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from database import add_credit_record, get_user_credit, get_user_lang, save_subtitle_result, update_user_credit
+from database import add_credit_record, get_user_credit, get_user_lang, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
-from mongodb import check_subtitles_task, get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_summary_to_mongodb, save_subtitles_task, update_subtitle_result_to_mongodb
-from recos import subtitle_recos
-from summary import subtitle_summary
-from translate import translate_gpt
+from mongodb import check_subtitles_task, save_subtitles_task
 
 from worker import get_subtitles_recos, get_subtitles_summary, get_subtitles_translation, transcript_file_task_add, transcript_task_add
 from worker import celery
@@ -333,7 +330,7 @@ def get_subtitles(task_id, current_user: Annotated[User, Depends(get_current_use
     user_id = current_user['sub']
     lang = get_user_lang(user_id)
     running = check_subtitles_task('translate', task_id)
-    if running is None:
+    if running is not None:
         return JSONResponse({'task_id': running})
     else:
         task = get_subtitles_translation.delay(
@@ -347,19 +344,18 @@ def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)
     user_id = current_user['sub']
     lang = get_user_lang(user_id)
     running = check_subtitles_task('summary', task_id)
-    if running is None:
+    if running is not None:
         return JSONResponse({'task_id': running})
     else:
         task = get_subtitles_summary.delay(
             task_id, lang)
         return JSONResponse({'task_id': task.id})
 
-
 @app.get("/subtitles/recos/{task_id}")
 def get_recos(task_id, current_user: Annotated[User, Depends(get_current_user)]):
     user_id = current_user['sub']
     running = check_subtitles_task('summary', task_id)
-    if running is None:
+    if running is not None:
         return JSONResponse({'task_id': running})
     else:
         task = get_subtitles_recos.delay(
