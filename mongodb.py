@@ -81,6 +81,8 @@ async def check_status(task: str, task_id: str):
     document = await db.summary.find_one({'task_id': {'$eq': task_id}})
     if document is None:
         return None
+    elif key not in document:
+        return None
     else:
         return document[key] 
 
