@@ -73,7 +73,7 @@ def transcribe_audio(filename, format, prompt):
         model_size = "medium"
         model = WhisperModel(model_size, device='cpu',
                              compute_type="int8", download_root='/data')
-        segments, info = model.transcribe(f.name, beam_size=5, cpu_threads=8, num_workers=4)  # type: ignore
+        segments, info = model.transcribe(f.name, beam_size=5)  # type: ignore
         segments = list(segments)
         os.remove(filename)
         print(segments)
