@@ -33,7 +33,6 @@ def convert_time_to_milliseconds(time_str: SrtTimestamp) -> int:
     )
 
 
-
 def get_duration(start_time: SrtTimestamp, end_time: SrtTimestamp) -> int:
     start_milliseconds = convert_time_to_milliseconds(start_time)
     end_milliseconds = convert_time_to_milliseconds(end_time)
@@ -94,12 +93,14 @@ def merge_multi_srt_items(*items: SrtItem) -> SrtItem:
         "text": " ".join([item["text"] for item in items])
     }
 
-def int_to_subtitle_time(seconds):
-    hours = seconds // 3600
-    minutes = (seconds // 60) % 60
-    seconds = seconds % 60
+
+def int_to_subtitle_time(seconds: float):
+    hours = int(seconds // 3600)
+    minutes = int((seconds // 60) % 60)
+    seconds = int(seconds % 60)
     milliseconds = int((seconds - int(seconds)) * 1000)
     return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
+
 
 def merge_multiple_srt_strings(*srts: str) -> str:
     first_srt, *remaining_srts = srts

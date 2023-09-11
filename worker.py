@@ -81,7 +81,7 @@ def transcribe_audio(filename, format, prompt):
         for segment in segments:
             srt = f"{segment.id}" + '\n' + int_to_subtitle_time(segment.start) + \
                 ' --> ' + int_to_subtitle_time(segment.end) + \
-                '\n' + segment.text + ']n'
+                '\n' + segment.text + '\n'
             result.append(srt)
         return segments
 
