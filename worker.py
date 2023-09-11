@@ -75,6 +75,7 @@ def transcribe_audio(filename, format, prompt):
         segments,info = model.transcribe(f.name, beam_size=8)  # type: ignore
         segments = list(segments)
         os.remove(filename)
+        print(segments)
         return segments
 
 
