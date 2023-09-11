@@ -169,6 +169,7 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
     inputs = list(map(lambda file: (file, format, prompt), files))
     with multiprocessing.Pool(processes=len(inputs)) as pool:
         results = pool.starmap(transcribe_audio, inputs)
+    print(results)
     # Update user credit
     update_credit_record(transcript_file_task_add.request.id,
                          user['sub'], -duration, len(audio), 'audio')
