@@ -83,7 +83,7 @@ def transcribe_audio(filename, format, prompt):
                 ' --> ' + int_to_subtitle_time(segment.end) + \
                 '\n' + segment.text + '\n'
             result.append(srt)
-        return segments
+        return '\n'.join(result)
 
 
 def get_youtube_audio_url(link):
