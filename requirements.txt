@@ -16,3 +16,4 @@ redis
 celery[redis]
 motor
 tiktoken
+faster-whisper

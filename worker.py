@@ -19,6 +19,7 @@ from recos import subtitle_recos
 from summary import subtitle_summary
 from translate import translate_gpt
 from utils import merge_multiple_srt_strings, parse_srt
+from faster_whisper import WhisperModel
 
 load_dotenv()
 celery = Celery('recos', broker=os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379"),
@@ -67,10 +68,13 @@ def export_mp3(audio):
 def transcribe_audio(filename, format, prompt):
     print('Request openapi', filename, format, prompt, sep="---")
     with open(filename, "rb") as f:
-        transcript = openai.Audio.transcribe(
-            "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
+        # transcript = openai.Audio.transcribe(
+        #     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
+        model_size = "large-v2"
+        model = WhisperModel(model_size, device='cpu', compute_type="int8")
+        segments,info = model.transcribe(f.name, beam_size=8)  # type: ignore
         os.remove(filename)
-        return transcript
+        return segments
 
 
 def get_youtube_audio_url(link):
@@ -113,7 +117,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
             return "Insufficient credit"
         format = 'srt' if srt else 'text'
         # Slice into max 20-minute chunks
-        sliced_audios = slice_audio(audio, 20 * 60 * 1000)
+        sliced_audios = slice_audio(audio, 10 * 60 * 1000)
         # Save files in /tmp
         files = []
         for audio in sliced_audios:
