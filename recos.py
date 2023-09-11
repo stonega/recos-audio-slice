@@ -46,10 +46,11 @@ def num_tokens_from_messages(message, model="gpt-3.5-turbo-0301"):
     else:
         raise NotImplementedError(f"""error.""")
 
+
 def get_recos(text):
 
     prompt_text = f"""
-I want you to extract info from text if any movies books you found.Return the item list split with |, make sure not include any other text like The text mentions, Text:
+I want you to extract info from text if any movies books you found.Return the item list split with |,return result with json object, Text:
 {text}"""
     print(prompt_text)
     try:
@@ -118,10 +119,15 @@ def subtitle_recos(subtitles):
         ntokens.append(num_tokens_from_messages(chunk))
 
     chunks = group_chunks(chunks, ntokens)
-    recos_chunks = []
+    recos_chunks = {
+        "books": [],
+        "movies": [],
+    }
     for i, chunk in enumerate(chunks):
         print(str(i+1) + " / " + str(len(chunks)))
-        recos_chunks.append(get_recos(chunk)+"\n")
+        result = get_recos(chunk)
+        
+
     result = "\n".join(recos_chunks)
 
     return result

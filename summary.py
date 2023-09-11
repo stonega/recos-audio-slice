@@ -9,7 +9,7 @@ import tiktoken
 import re
 
 
-def group_chunks(chunks, ntokens, max_len=1000):
+def group_chunks(chunks, ntokens, max_len=5000):
     """
     Group very short chunks, to form approximately a page long chunks.
     """
@@ -35,7 +35,7 @@ def group_chunks(chunks, ntokens, max_len=1000):
     return batches
 
 
-def num_tokens_from_messages(message, model="gpt-3.5-turbo-0301"):
+def num_tokens_from_messages(message, model="gpt-3.5-turbo-16k"):
     """Returns the number of tokens used by a list of messages."""
     try:
         encoding = tiktoken.encoding_for_model(model)
@@ -47,15 +47,16 @@ def num_tokens_from_messages(message, model="gpt-3.5-turbo-0301"):
     else:
         raise NotImplementedError(f"""error.""")
 
+
 def summary(text, output_language):
 
     prompt_text = f"""
-I want you to act as a text summarizer to help me create a summary of the text I provide. The summary should be in {output_language} and should be no more than 1000 words.Text:
+I want you to act as a text summarizer to help me create a summary of the text I provide. The summary should be in {output_language} and should be no more than 200 words.Text:
 {text}"""
     print(prompt_text)
     try:
         completion = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo-16k",
             messages=[
                 {
                     "role": "user",
@@ -85,7 +86,7 @@ I want you to act as a text summarizer to help me create a summary of the text I
         # TIME LIMIT for open api please pay
         time.sleep(60)
         completion = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo-16k",
             messages=[
                 {
                     "role": "user",
@@ -125,6 +126,7 @@ def subtitle_summary(subtitles, output_language):
         print(str(i+1) + " / " + str(len(chunks)))
         summary_chunks.append(summary(chunk, output_language)+"\n")
 
-    result = summary_chunks[0] if len(summary_chunks) == 1 else summary("\n".join(summary_chunks), output_language)
+    result = summary_chunks[0] if len(summary_chunks) == 1 else summary(
+        "\n".join(summary_chunks), output_language)
 
     return result

@@ -32,7 +32,7 @@ def group_chunks(chunks, ntokens, max_len=1000):
     batches.append(cur_batch)
     return batches
 
-def num_tokens_from_messages(message, model="gpt-3.5-turbo-0301"):
+def num_tokens_from_messages(message, model="gpt-3.5-turbo-16k"):
     """Returns the number of tokens used by a list of messages."""
     try:
         encoding = tiktoken.encoding_for_model(model)
@@ -55,7 +55,7 @@ Text to translate:
     
     try:
         completion = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo-16k",
             messages=[
                 {
                     "role": "user",
@@ -85,7 +85,7 @@ Text to translate:
         # TIME LIMIT for open api please pay
         time.sleep(60)
         completion = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo-16k",
             messages=[
                 {
                     "role": "user",
