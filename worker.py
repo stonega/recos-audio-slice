@@ -18,7 +18,7 @@ from mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, 
 from recos import subtitle_recos
 from summary import subtitle_summary
 from translate import translate_gpt
-from utils import merge_multiple_srt_strings, parse_srt
+from utils import int_to_subtitle_time, merge_multiple_srt_strings, parse_srt
 from faster_whisper import WhisperModel
 
 load_dotenv()
@@ -77,6 +77,12 @@ def transcribe_audio(filename, format, prompt):
         segments = list(segments)
         os.remove(filename)
         print(segments)
+        result = []
+        for segment in segments:
+            srt = f"{segment.id}" + '\n' + int_to_subtitle_time(segment.start) + \
+                ' --> ' + int_to_subtitle_time(segment.end) + \
+                '\n' + segment.text + ']n'
+            result.append(srt)
         return segments
 
 
