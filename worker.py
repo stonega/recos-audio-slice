@@ -71,8 +71,9 @@ def transcribe_audio(filename, format, prompt):
         # transcript = openai.Audio.transcribe(
         #     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
         model_size = "large-v2"
-        model = WhisperModel(model_size, device='cpu', compute_type="int8")
-        segments,info = model.transcribe(f.name, beam_size=8)  # type: ignore
+        model = WhisperModel(model_size, device='cpu',
+                             compute_type="int8", download_root='/data')
+        segments, info = model.transcribe(f.name, beam_size=8)  # type: ignore
         segments = list(segments)
         os.remove(filename)
         print(segments)
@@ -137,7 +138,8 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         save_subtitle_result_to_mongodb(srts, transcript_task_add.request.id)
         return
     else:
-        transcript_task_add.update_state(state='FAILURE', meta={'exc': 'Failed to fetch audio'})
+        transcript_task_add.update_state(
+            state='FAILURE', meta={'exc': 'Failed to fetch audio'})
 
 
 @celery.task(name="transcript-file.add")
@@ -163,33 +165,37 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
         results = pool.starmap(transcribe_audio, inputs)
     # Update user credit
     update_credit_record(transcript_file_task_add.request.id,
-                            user['sub'], -duration, len(audio), 'audio')
+                         user['sub'], -duration, len(audio), 'audio')
     srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
     # Save subtitles
     save_subtitle_result_to_mongodb(srts, transcript_file_task_add.request.id)
     print('Request sent')
     return
 
+
 @celery.task(name="subtitles.translate")
 def get_subtitles_translation(task_id, lang):
-    result = get_subtitles_from_mongodb(task_id)    
+    result = get_subtitles_from_mongodb(task_id)
     subtitles = translate_gpt(result, lang)
     update_subtitle_result_to_mongodb(subtitles)
     return
 
+
 @celery.task(name="subtitles.summary")
 def get_subtitles_summary(task_id, lang):
-    result = get_subtitles_from_mongodb(task_id)    
+    result = get_subtitles_from_mongodb(task_id)
     summary = subtitle_summary(result, lang)
     save_subtitle_summary_to_mongodb(summary, task_id)
     return
 
+
 @celery.task(name="subtitles.recos")
 def get_subtitles_recos(task_id):
-    result = get_subtitles_from_mongodb(task_id)    
+    result = get_subtitles_from_mongodb(task_id)
     recos = subtitle_recos(result)
     save_subtitle_recos_to_mongodb(recos, task_id)
     return
+
 
 @task_postrun.connect
 def task_sent_handler(task_id, task, args, kwargs, retval, state, **extra_info):
