@@ -70,10 +70,10 @@ def transcribe_audio(filename, format, prompt):
     with open(filename, "rb") as f:
         # transcript = openai.Audio.transcribe(
         #     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
-        model_size = "medium"
+        model_size = "small"
         model = WhisperModel(model_size, device='cpu',
                              compute_type="int8", download_root='/data')
-        segments, info = model.transcribe(f.name, beam_size=5)  # type: ignore
+        segments, info = model.transcribe(f.name, beam_size=5, cpu_threads=8)  # type: ignore
         segments = list(segments)
         os.remove(filename)
         print(segments)
