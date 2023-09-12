@@ -40,11 +40,8 @@ def num_tokens_from_messages(message, model="gpt-3.5-turbo-0301"):
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
         encoding = tiktoken.get_encoding("cl100k_base")
-    if model == "gpt-3.5-turbo-0301":  # note: future models may deviate from this
-        num_tokens = len(encoding.encode(message))
-        return num_tokens
-    else:
-        raise NotImplementedError(f"""error.""")
+    num_tokens = len(encoding.encode(message))
+    return num_tokens
 
 
 def get_recos(text):

@@ -7,7 +7,7 @@ import time
 import openai
 import tiktoken
 import re
-def group_chunks(chunks, ntokens, max_len=1000):
+def group_chunks(chunks, ntokens, max_len=2000):
     """
     Group very short chunks, to form approximately a page long chunks.
     """
@@ -38,11 +38,8 @@ def num_tokens_from_messages(message, model="gpt-3.5-turbo-16k"):
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
         encoding = tiktoken.get_encoding("cl100k_base")
-    if model == "gpt-3.5-turbo-0301":  # note: future models may deviate from this
-        num_tokens = len(encoding.encode(message))
-        return num_tokens
-    else:
-        raise NotImplementedError(f"""error.""")
+    num_tokens = len(encoding.encode(message))
+    return num_tokens
 
 
 def translate(text,output_language):
