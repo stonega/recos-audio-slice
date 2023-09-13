@@ -152,7 +152,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         if (duration > credit):
             return "Insufficient credit"
         format = 'srt' if srt else 'text'
-        # Slice into max 20-minute chunks
+        # Slice into max 5-minute chunks
         sliced_audios = slice_audio(audio, 5 * 60 * 1000)
         # Save files in /tmp
         files = []
@@ -231,5 +231,5 @@ def get_subtitles_recos(task_id):
 
 
 @task_postrun.connect
-def task_sent_handler(task_id):
+def task_sent_handler(task_id, task, args, kwargs, retval, state, **extra_info):
     logger.info('task_postrun for task id {taskId}', task_id)
