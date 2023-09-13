@@ -70,7 +70,7 @@ def transcribe_audio(filename, format, prompt):
     with open(filename, "rb") as f:
         # transcript = openai.Audio.transcribe(
         #     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
-        model_size = "small"
+        model_size = "medium"
         model = WhisperModel(model_size, device='cpu',
                              compute_type="int8", download_root='/data')
         segments, info = model.transcribe(f.name, beam_size=5)  # type: ignore
@@ -84,6 +84,33 @@ def transcribe_audio(filename, format, prompt):
                 '\n' + segment.text + '\n'
             result.append(srt)
         return '\n'.join(result)
+
+def fix_subtitle(subtitle:str):
+    prompt_text = f"""
+    system_prompt = "You are a helpful assistant. Your task is to correct any spelling discrepancies in the transcribed text. Make sure only use the context provided
+"""
+    print(prompt_text)
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo-16k",
+        messages=[
+            {
+                "role": "system",
+                "content": prompt_text,
+            },
+            {
+                "role": "user",
+                "content": subtitle
+            }
+        ],
+    )
+    t_text = (
+        completion["choices"][0]  # type: ignore
+        .get("message")
+        .get("content")
+        .encode("utf8")
+        .decode()
+    )
+    return t_text
 
 
 def get_youtube_audio_url(link):
@@ -126,7 +153,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
             return "Insufficient credit"
         format = 'srt' if srt else 'text'
         # Slice into max 20-minute chunks
-        sliced_audios = slice_audio(audio, 10 * 60 * 1000)
+        sliced_audios = slice_audio(audio, 5 * 60 * 1000)
         # Save files in /tmp
         files = []
         for audio in sliced_audios:
