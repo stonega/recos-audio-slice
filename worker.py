@@ -83,13 +83,13 @@ def transcribe_audio(filename, format, prompt):
                 ' --> ' + int_to_subtitle_time(segment.end) + \
                 '\n' + segment.text + '\n'
             result.append(srt)
-        return '\n'.join(result)
+        return fix_subtitle('\n'.join(result))
 
 def fix_subtitle(subtitle:str):
     prompt_text = f"""
     system_prompt = "You are a helpful assistant. Your task is to correct any spelling discrepancies in the transcribed text. Make sure only use the context provided
 """
-    print(prompt_text)
+    logger.info(prompt_text)
     completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-16k",
         messages=[
@@ -196,7 +196,6 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
     inputs = list(map(lambda file: (file, format, prompt), files))
     with multiprocessing.Pool(processes=len(inputs)) as pool:
         results = pool.starmap(transcribe_audio, inputs)
-    print(results)
     # Update user credit
     update_credit_record(transcript_file_task_add.request.id,
                          user['sub'], -duration, len(audio), 'audio')
