@@ -13,12 +13,12 @@ from tqdm import tqdm
 import requests
 from celery.signals import task_postrun
 
-from database import get_user_credit, update_credit_record
-from mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_result_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
-from recos import subtitle_recos
-from summary import subtitle_summary
-from translate import translate_gpt
-from utils import int_to_subtitle_time, merge_multiple_srt_strings, parse_srt
+from database.database import get_user_credit, update_credit_record
+from database.mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_result_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
+from ai_request.recos import subtitle_recos
+from ai_request.summary import subtitle_summary
+from ai_request.translate import translate_gpt
+from utils import int_to_subtitle_time, merge_multiple_srt_strings, parse_srt, logger
 from faster_whisper import WhisperModel
 
 load_dotenv()
@@ -145,7 +145,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         content.extend(data)
 
     if response.status_code == 200:
-        print('Audio downloaded')
+        logger.info('Audio downloaded')
         credit = get_user_credit(user['sub'])
         audio = AudioSegment.from_file(io.BytesIO(content))
         duration = round(len(audio) / ONE_MINUTE)
@@ -232,5 +232,5 @@ def get_subtitles_recos(task_id):
 
 
 @task_postrun.connect
-def task_sent_handler(task_id, task, args, kwargs, retval, state, **extra_info):
-    print('task_postrun for task id {taskId}', task_id)
+def task_sent_handler(task_id):
+    logger.info('task_postrun for task id {taskId}', task_id)

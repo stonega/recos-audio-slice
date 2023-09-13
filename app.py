@@ -21,10 +21,10 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from database import add_credit_record, get_user_credit, get_user_lang, update_user_credit
+from database.database import add_credit_record, get_user_credit, get_user_lang, update_user_credit
 from pytube import YouTube
 from fastapi.staticfiles import StaticFiles
-from mongodb import check_subtitles_task, save_subtitles_task
+from database.mongodb import check_subtitles_task, save_subtitles_task
 
 from worker import get_subtitles_recos, get_subtitles_summary, get_subtitles_translation, transcript_file_task_add, transcript_task_add
 from worker import celery

@@ -4,11 +4,9 @@ import uuid
 import cuid
 import psycopg2
 from dotenv import load_dotenv
-
-from utils import SrtItem
+from utils import SrtItem, logger
 
 load_dotenv()
-
 
 def get_user_credit(user_id: str):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
@@ -47,7 +45,7 @@ def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, a
 
 
 def update_credit_record(task_id: str, user_id: str, credit: int, duration: int, type: str):
-    print('update credit...', credit)
+    logger.info('update credit...', credit)
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
     update_query = """UPDATE "User" SET credit = credit + %s WHERE id = %s;"""
@@ -59,7 +57,7 @@ def update_credit_record(task_id: str, user_id: str, credit: int, duration: int,
 
 
 def update_user_credit(user_id: str, credit: int, duration: int, name: str | None, type: str):
-    print('update credit...', credit)
+    logger.info('update credit...', credit)
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
     update_query = """UPDATE "User" SET credit = credit + %s WHERE id = %s;"""
@@ -72,7 +70,7 @@ def update_user_credit(user_id: str, credit: int, duration: int, name: str | Non
 
 
 def save_subtitle_result(srt_items: List[SrtItem], task_id: str):
-    print('save result...')
+    logger.info('save result...')
     srts = list(map(lambda s: (str(uuid.uuid4()), task_id,
                 s['id'], s['start_time'], s['end_time'], s['text']), srt_items))
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
@@ -84,7 +82,7 @@ def save_subtitle_result(srt_items: List[SrtItem], task_id: str):
 
 
 def get_subtitle_result(task_id: str):
-    print('get subtitle result...')
+    logger.info('get subtitle result...')
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
     select_query = """SELECT * FROM "Subtitle" where task_id = %s ORDER BY subtitle_id;"""

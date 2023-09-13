@@ -2,6 +2,7 @@ import asyncio
 import os
 from typing import List
 import motor.motor_asyncio
+from utils import logger
 
 client = motor.motor_asyncio.AsyncIOMotorClient(os.environ["MONGO_URL"])
 db = client.recos

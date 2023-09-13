@@ -1,8 +1,20 @@
+import logging
 from typing import List, Dict
 
 SrtItem = Dict[str, any]  # type: ignore
 SrtTimestamp = str
 
+def get_logger(name, level=logging.INFO):
+    logger = logging.getLogger(name)
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        logging.Formatter("%(levelname)s: %(asctime)s: %(name)s  %(message)s")
+    )
+    logger.addHandler(handler)
+    logger.setLevel(level)
+    return logger
+
+logger = get_logger(__name__)
 
 def parse_srt(srt_string: str) -> List[SrtItem]:
     srt_lines = srt_string.strip().split("\n\n")
