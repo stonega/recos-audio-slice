@@ -126,11 +126,10 @@ def get_youtube_audio_url(link):
 @celery.task(name="transcript.add")
 def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
     if (type == 'youtube'):
-        print('Youtube url', url)
+        logger.info('youtube url', url)
         url = get_youtube_audio_url(url)
-        print('Youtube audio url', url)
-    print('Downloading:', url)
-    print('Srt format', srt)
+        logger.info('youtube audio url', url)
+    logger.info('downloading:', url)
     try:
         response = requests.get(url, stream=True)
     except requests.exceptions.HTTPError as err:
@@ -157,7 +156,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         # Save files in /tmp
         files = []
         for audio in sliced_audios:
-            print('Audio length:', len(audio))
+            logger.info('audio length:', len(audio))
             files.append(export_mp3(audio))
         # Transcribe
         results = []
@@ -184,12 +183,12 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
         return 'Insufficient credit'
     format = 'srt' if srt else 'text'
     print('Audio length:', len(audio))
-    # Slice into max 20-minute chunks
-    sliced_audios = slice_audio(audio, 20 * 60 * 1000)
+    # Slice into max 5-minute chunks
+    sliced_audios = slice_audio(audio, 5 * 60 * 1000)
     # Export audio files
     files = []
     for audio in sliced_audios:
-        print('Audio length:', len(audio))
+        logger.info('audio length:', len(audio))
         files.append(export_mp3(audio))
     results = []
     # Transcribe
