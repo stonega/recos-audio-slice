@@ -66,7 +66,7 @@ def export_mp3(audio):
 
 
 def transcribe_audio(filename, format, prompt):
-    print('Request openapi', filename, format, prompt, sep="---")
+    logger.info(filename, format, prompt)
     with open(filename, "rb") as f:
         # transcript = openai.Audio.transcribe(
         #     "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
@@ -76,7 +76,6 @@ def transcribe_audio(filename, format, prompt):
         segments, info = model.transcribe(f.name, beam_size=5)  # type: ignore
         segments = list(segments)
         os.remove(filename)
-        print(segments)
         result = []
         for segment in segments:
             srt = f"{segment.id}" + '\n' + int_to_subtitle_time(segment.start) + \
@@ -89,7 +88,7 @@ def fix_subtitle(subtitle:str):
     prompt_text = f"""
     system_prompt = "You are a helpful assistant. Your task is to correct any spelling discrepancies in the transcribed text. Make sure only use the context provided
 """
-    logger.info(prompt_text)
+    logger.info(prompt_text, subtitle)
     openai.api_key = os.getenv("OPENAI_API_KEY")
     completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-16k",
@@ -111,6 +110,7 @@ def fix_subtitle(subtitle:str):
         .encode("utf8")
         .decode()
     )
+    logger.info(t_text)
     return t_text
 
 
