@@ -157,7 +157,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         # Save files in /tmp
         files = []
         for audio in sliced_audios:
-            logger.info('audio length:', len(audio))
+            logger.info(f'audio length:{len(audio)}')
             files.append(export_mp3(audio))
         # Transcribe
         results = []
@@ -185,11 +185,11 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
     format = 'srt' if srt else 'text'
     print('Audio length:', len(audio))
     # Slice into max 5-minute chunks
-    sliced_audios = slice_audio(audio, 5 * 60 * 1000)
+    sliced_audios = slice_audio(audio, 10 * 60 * 1000)
     # Export audio files
     files = []
     for audio in sliced_audios:
-        logger.info('audio length:', len(audio))
+        logger.info(f'audio length: {len(audio)}')
         files.append(export_mp3(audio))
     results = []
     # Transcribe
