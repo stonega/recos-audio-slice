@@ -66,7 +66,7 @@ def export_mp3(audio):
 
 
 def transcribe_audio(filename, format, prompt):
-    logger.info(filename, format, prompt)
+    logger.info(filename)
     with open(filename, "rb") as f:
         transcript = openai.Audio.transcribe(
             "whisper-1", f, api_key=OPENAI_API_KEY, response_format=format, prompt=prompt)
@@ -127,7 +127,6 @@ def get_youtube_audio_url(link):
 @celery.task(name="transcript.add")
 def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
     if (type == 'youtube'):
-        logger.info('youtube url', url)
         url = get_youtube_audio_url(url)
         logger.info(f'youtube audio {url}')
     logger.info(f'downloading: {url}')
@@ -233,4 +232,4 @@ def get_subtitles_recos(task_id):
 
 @task_postrun.connect
 def task_sent_handler(task_id, task, args, kwargs, retval, state, **extra_info):
-    logger.info('task_postrun for task id {taskId}')
+    logger.info(f'task_postrun for task id {task_id}')
