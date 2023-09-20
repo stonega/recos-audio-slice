@@ -45,7 +45,7 @@ def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, a
 
 
 def update_credit_record(task_id: str, user_id: str, credit: int, duration: int, type: str):
-    logger.info('update credit...', credit)
+    logger.info(f'update credit... {credit}')
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
     update_query = """UPDATE "User" SET credit = credit + %s WHERE id = %s;"""
@@ -55,6 +55,13 @@ def update_credit_record(task_id: str, user_id: str, credit: int, duration: int,
     conn.commit()
     return cursor.rowcount
 
+def update_credit_record_status(task_id: str, status: str):
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+    cursor = conn.cursor()
+    insert = """UPDATE "Credit" SET status = %s WHERE ID = %s;"""
+    cursor.execute(insert, (status, task_id))
+    conn.commit()
+    return cursor.rowcount
 
 def update_user_credit(user_id: str, credit: int, duration: int, name: str | None, type: str):
     logger.info('update credit...', credit)
@@ -67,25 +74,3 @@ def update_user_credit(user_id: str, credit: int, duration: int, name: str | Non
                    user_id, -credit, duration, type))
     conn.commit()
     return cursor.rowcount
-
-
-def save_subtitle_result(srt_items: List[SrtItem], task_id: str):
-    logger.info('save result...')
-    srts = list(map(lambda s: (str(uuid.uuid4()), task_id,
-                s['id'], s['start_time'], s['end_time'], s['text']), srt_items))
-    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
-    cursor = conn.cursor()
-    insert = """INSERT INTO "Subtitle" (id, task_id, subtitle_id, start_timestamp, end_timestamp, text ) VALUES (%s, %s, %s, %s, %s, %s);"""
-    cursor.executemany(insert, srts)
-    conn.commit()
-    return cursor.rowcount
-
-
-def get_subtitle_result(task_id: str):
-    logger.info('get subtitle result...')
-    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
-    cursor = conn.cursor()
-    select_query = """SELECT * FROM "Subtitle" where task_id = %s ORDER BY subtitle_id;"""
-    cursor.execute(select_query, (task_id,))
-    subtitles = cursor.fetchall()
-    return subtitles

@@ -14,7 +14,7 @@ from tqdm import tqdm
 import requests
 from celery.signals import task_postrun
 
-from database.database import get_user_credit, update_credit_record
+from database.database import get_user_credit, update_credit_record, update_credit_record_status
 from database.mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_result_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
 from ai_request.recos import subtitle_recos
 from ai_request.summary import subtitle_summary
@@ -138,6 +138,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         transcript_task_add.update_state(
             state='FAILURE',
             meta={'exc_type': ex.__class__.__name__, 'exc_message': traceback.format_exc().split('\n'), 'custom': 'Failed to fetch audio'})
+        update_credit_record_status(transcript_task_add.request.id, 'failed')
         return
 
     total_size = int(response.headers.get('content-length', 0))
@@ -175,6 +176,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         save_subtitle_result_to_mongodb(srts, transcript_task_add.request.id)
         return
     else:
+        update_credit_record_status(transcript_task_add.request.id, 'failed')
         transcript_task_add.update_state(
             state='FAILURE', meta={
                 'exc_type': 'HTTPError', 'exc_message': traceback.format_exc().split('\n'),
