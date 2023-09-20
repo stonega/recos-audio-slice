@@ -134,9 +134,10 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
     logger.info(f'downloading: {url}')
     try:
         response = requests.get(url, stream=True)
-    except requests.exceptions.HTTPError as err:
+    except requests.exceptions.HTTPError as ex:
         transcript_task_add.update_state(
-            state='FAILURE', meta={'custom': 'Failed to fetch audio'})
+            state='FAILURE',
+            meta={'exc_type': ex.__class__.__name__, 'exc_message': traceback.format_exc().split('\n'), 'custom': 'Failed to fetch audio'})
         return
 
     total_size = int(response.headers.get('content-length', 0))
@@ -175,7 +176,9 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         return
     else:
         transcript_task_add.update_state(
-            state='FAILURE', meta={'custom': 'Failed to fetch audio'})
+            state='FAILURE', meta={
+                'exc_type': 'HTTPError', 'exc_message': traceback.format_exc().split('\n'),
+                'custom': 'Failed to fetch audio'})
 
 
 @celery.task(name="transcript-file.add")
