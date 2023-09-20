@@ -136,7 +136,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         response = requests.get(url, stream=True)
     except requests.exceptions.HTTPError as err:
         transcript_task_add.update_state(
-            state='FAILURE', meta={'exc': 'Failed to fetch audio'})
+            state='FAILURE', meta={'custom': 'Failed to fetch audio'})
         return
 
     total_size = int(response.headers.get('content-length', 0))
@@ -175,7 +175,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         return
     else:
         transcript_task_add.update_state(
-            state='FAILURE', meta={'exc': 'Failed to fetch audio'})
+            state='FAILURE', meta={'custom': 'Failed to fetch audio'})
 
 
 @celery.task(name="transcript-file.add")
@@ -204,7 +204,7 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
     srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
     # Save subtitles
     save_subtitle_result_to_mongodb(srts, transcript_file_task_add.request.id)
-    print('Request sent')
+    logger.info('request sent')
     return
 
 
@@ -228,10 +228,20 @@ def get_subtitles_translation(task_id, lang):
 
 @celery.task(name="subtitles.summary")
 def get_subtitles_summary(task_id, lang):
-    result = get_subtitles_from_mongodb(task_id)
-    summary = subtitle_summary(result, lang)
-    save_subtitle_summary_to_mongodb(summary, task_id)
-    return
+    try:
+        result = get_subtitles_from_mongodb(task_id)
+        summary = subtitle_summary(result, lang)
+        save_subtitle_summary_to_mongodb(summary, task_id)
+        return
+    except Exception as ex:
+        get_subtitles_summary.update_state(
+            state='FAILURE',
+            meta={
+                'exc_type': type(ex).__name__,
+                'exc_message': traceback.format_exc().split('\n'),
+                'custom': 'translate error'
+            })
+        return
 
 
 @celery.task(name="subtitles.recos")
