@@ -1,6 +1,7 @@
 from datetime import datetime
 import io
 import multiprocessing
+import traceback
 import openai
 import os
 import uuid
@@ -40,7 +41,7 @@ def allowed_file(filename):
 
 
 def slice_audio(audio, slice_duration):
-    startTime = datetime.now()
+    start_time = datetime.now()
     slices = []
     duration = len(audio)
     start = 0
@@ -51,8 +52,8 @@ def slice_audio(audio, slice_duration):
         start += slice_duration
         end += slice_duration
 
-    endTime = datetime.now()
-    print('Slicing took', endTime - startTime)
+    end_time = datetime.now()
+    logger.info(f'slicing took {end_time - start_time}')
     return slices
 
 
@@ -61,7 +62,7 @@ def export_mp3(audio):
     filename = '/tmp/' + str(uuid.uuid4()) + '.mp3'
     audio.export(filename, format="mp3")
     end_time = datetime.now()
-    logger.info(f'audio saved {filename},  {end_time} - {start_time}')
+    logger.info(f'audio saved {filename},  {end_time - start_time}')
     return filename
 
 
@@ -84,7 +85,8 @@ def transcribe_audio(filename, format, prompt):
         #     result.append(srt)
         return transcript
 
-def fix_subtitle(subtitle:str):
+
+def fix_subtitle(subtitle: str):
     prompt_text = f"""
     system_prompt = "You are a helpful assistant. Your task is to correct any spelling discrepancies in the transcribed text. Make sure only use the context provided
 """
@@ -208,10 +210,20 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
 
 @celery.task(name="subtitles.translate")
 def get_subtitles_translation(task_id, lang):
-    result = get_subtitles_from_mongodb(task_id)
-    subtitles = translate_gpt(result, lang)
-    update_subtitle_result_to_mongodb(subtitles)
-    return
+    try:
+        result = get_subtitles_from_mongodb(task_id)
+        subtitles = translate_gpt(result, lang)
+        update_subtitle_result_to_mongodb(subtitles)
+        return
+    except Exception as ex:
+        get_subtitles_translation.update_state(
+            state='FAILURE',
+            meta={
+                'exc_type': type(ex).__name__,
+                'exc_message': traceback.format_exc().split('\n'),
+                'custom': 'translate error'
+            })
+        return
 
 
 @celery.task(name="subtitles.summary")
