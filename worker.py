@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 import requests
 from celery.signals import task_postrun
+from celery.exceptions import Ignore
 
 from database.database import get_user_credit, update_credit_record, update_credit_record_status
 from database.mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_result_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
@@ -139,7 +140,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
             state='FAILURE',
             meta={'exc_type': ex.__class__.__name__, 'exc_message': traceback.format_exc().split('\n'), 'custom': 'Failed to fetch audio'})
         update_credit_record_status(transcript_task_add.request.id, 'failed')
-        return
+        raise Ignore()
 
     total_size = int(response.headers.get('content-length', 0))
 
@@ -181,6 +182,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
             state='FAILURE', meta={
                 'exc_type': 'HTTPError', 'exc_message': traceback.format_exc().split('\n'),
                 'custom': 'Failed to fetch audio'})
+        raise Ignore()
 
 
 @celery.task(name="transcript-file.add")
@@ -228,7 +230,7 @@ def get_subtitles_translation(task_id, lang):
                 'exc_message': traceback.format_exc().split('\n'),
                 'custom': 'translate error'
             })
-        return
+        raise Ignore()
 
 
 @celery.task(name="subtitles.summary")
@@ -246,15 +248,26 @@ def get_subtitles_summary(task_id, lang):
                 'exc_message': traceback.format_exc().split('\n'),
                 'custom': 'translate error'
             })
-        return
+        raise Ignore()
 
 
 @celery.task(name="subtitles.recos")
 def get_subtitles_recos(task_id):
-    result = get_subtitles_from_mongodb(task_id)
-    recos = subtitle_recos(result)
-    save_subtitle_recos_to_mongodb(recos, task_id)
-    return
+    try:
+        result = get_subtitles_from_mongodb(task_id)
+        recos = subtitle_recos(result)
+        save_subtitle_recos_to_mongodb(recos, task_id)
+        return
+    except Exception as ex:
+        get_subtitles_recos.update_state(
+            state='FAILURE',
+            meta={
+                'exc_type': type(ex).__name__,
+                'exc_message': traceback.format_exc().split('\n'),
+                'custom': 'translate error'
+            })
+        raise Ignore()
+    
 
 
 @task_postrun.connect
