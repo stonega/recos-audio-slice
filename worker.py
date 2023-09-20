@@ -18,7 +18,7 @@ from database.mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_
 from ai_request.recos import subtitle_recos
 from ai_request.summary import subtitle_summary
 from ai_request.translate import translate_gpt
-from utils import int_to_subtitle_time, merge_multiple_srt_strings, parse_srt, logger
+from utils import merge_multiple_srt_strings, parse_srt, logger
 from faster_whisper import WhisperModel
 
 load_dotenv()
@@ -61,7 +61,7 @@ def export_mp3(audio):
     filename = '/tmp/' + str(uuid.uuid4()) + '.mp3'
     audio.export(filename, format="mp3")
     end_time = datetime.now()
-    logger.info('audio saved', filename,  end_time - start_time)
+    logger.info(f'audio saved {filename},  {end_time} - {start_time}')
     return filename
 
 
@@ -88,7 +88,7 @@ def fix_subtitle(subtitle:str):
     prompt_text = f"""
     system_prompt = "You are a helpful assistant. Your task is to correct any spelling discrepancies in the transcribed text. Make sure only use the context provided
 """
-    logger.info(prompt_text, subtitle)
+    logger.info(prompt_text)
     openai.api_key = os.getenv("OPENAI_API_KEY")
     completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-16k",
@@ -129,12 +129,14 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
     if (type == 'youtube'):
         logger.info('youtube url', url)
         url = get_youtube_audio_url(url)
-        logger.info('youtube audio url', url)
-    logger.info('downloading:', url)
+        logger.info(f'youtube audio {url}')
+    logger.info(f'downloading: {url}')
     try:
         response = requests.get(url, stream=True)
     except requests.exceptions.HTTPError as err:
-        return 'Failed to fetch url'
+        transcript_task_add.update_state(
+            state='FAILURE', meta={'exc': 'Failed to fetch audio'})
+        return
 
     total_size = int(response.headers.get('content-length', 0))
 
@@ -145,7 +147,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         content.extend(data)
 
     if response.status_code == 200:
-        logger.info('Audio downloaded')
+        logger.info('audio downloaded')
         credit = get_user_credit(user['sub'])
         audio = AudioSegment.from_file(io.BytesIO(content))
         duration = round(len(audio) / ONE_MINUTE)
@@ -183,7 +185,6 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
     if (duration > credit):
         return 'Insufficient credit'
     format = 'srt' if srt else 'text'
-    print('Audio length:', len(audio))
     # Slice into max 5-minute chunks
     sliced_audios = slice_audio(audio, 10 * 60 * 1000)
     # Export audio files
@@ -232,4 +233,4 @@ def get_subtitles_recos(task_id):
 
 @task_postrun.connect
 def task_sent_handler(task_id, task, args, kwargs, retval, state, **extra_info):
-    logger.info('task_postrun for task id {taskId}', task_id)
+    logger.info('task_postrun for task id {taskId}')
