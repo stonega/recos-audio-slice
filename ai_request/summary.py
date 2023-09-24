@@ -6,21 +6,23 @@ import os
 import time
 import openai
 from utils import logger
-from ai_request.utils import group_chunks, num_tokens_from_messages
+from ai_request.utils import group_chunks, num_tokens_from_messages, supportedLanguages
 
-def summary(text, output_language):
-
-    prompt_text = f"""
-I want you to act as a text summarizer to help me create a summary of the text I provide. The summary should be in {output_language} and should be no more than 200 words.Text:
-{text}"""
+def summary(text, output_locale):
+    output_language = supportedLanguages[output_locale]
+    prompt_text = f"You will be provided with podcast transcription, and your task is to summarize the podcast into a {output_language} text in about 50 words"
     print(prompt_text)
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-16k",
             messages=[
                 {
+                    "role": "system",
+                    "content": prompt_text,
+                },
+                {
                     "role": "user",
-                    "content": prompt_text
+                    "content":text 
                 }
             ],
         )

@@ -191,7 +191,6 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         update_credit_record_status(transcript_task_add.request.id, 'failed')
         transcript_task_add.update_state(
             state='FAILURE', meta={
-                'exc_type': 'HTTPError', 'exc_message': traceback.format_exc().split('\n'),
                 'custom': 'Failed to fetch audio'})
         raise Ignore()
 
@@ -218,10 +217,11 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
             results = pool.starmap(transcribe_audio, inputs)
         # Update user credit
         update_credit_record(transcript_file_task_add.request.id,
-                            user['sub'], -duration, len(audio), 'audio')
+                             user['sub'], -duration, len(audio), 'audio')
         srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
         # Save subtitles
-        save_subtitle_result_to_mongodb(srts, transcript_file_task_add.request.id)
+        save_subtitle_result_to_mongodb(
+            srts, transcript_file_task_add.request.id)
         logger.info('request sent')
         return
     except Exception as ex:
