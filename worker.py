@@ -128,8 +128,8 @@ def get_youtube_audio_url(link):
 
 
 @celery.task(name="transcript.add")
-def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prompt: str = '', type: str = 'audio'):
-    if (type == 'youtube'):
+def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prompt: str = '', audio_type: str = 'audio'):
+    if (audio_type == 'youtube'):
         url = get_youtube_audio_url(url)
         logger.info(f'youtube audio {url}')
     logger.info(f'downloading: {url}')
@@ -138,7 +138,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
     except requests.exceptions.HTTPError as ex:
         transcript_task_add.update_state(
             state='FAILURE',
-            meta={'exc_type': ex.__class__.__name__, 'exc_message': traceback.format_exc().split('\n'), 'custom': 'Failed to fetch audio'})
+            meta={'exc_type': 'HTTPError', 'exc_message': traceback.format_exc().split('\n'), 'custom': 'Failed to fetch audio'})
         update_credit_record_status(transcript_task_add.request.id, 'failed')
         raise Ignore()
 
@@ -166,16 +166,27 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
             logger.info(f'audio length:{len(audio)}')
             files.append(export_mp3(audio))
         # Transcribe
-        results = []
-        inputs = list(map(lambda file: (file, format, prompt), files))
-        with multiprocessing.Pool(processes=len(inputs)) as pool:
-            results = pool.starmap(transcribe_audio, inputs)
-        update_credit_record(transcript_task_add.request.id,
-                             user['sub'], -duration, len(audio), type)
-        srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
-        # Save subtitles
-        save_subtitle_result_to_mongodb(srts, transcript_task_add.request.id)
-        return
+        try:
+            inputs = list(map(lambda file: (file, format, prompt), files))
+            with multiprocessing.Pool(processes=len(inputs)) as pool:
+                results = pool.starmap(transcribe_audio, inputs)
+            update_credit_record(transcript_task_add.request.id,
+                                 user['sub'], -duration, len(audio), audio_type)
+            srts = parse_srt(merge_multiple_srt_strings(
+                *results))  # type: ignore
+            # Save subtitles
+            save_subtitle_result_to_mongodb(
+                srts, transcript_task_add.request.id)
+            return
+        except Exception as ex:
+            get_subtitles_translation.update_state(
+                state='FAILURE',
+                meta={
+                    'exc_type': type(ex).__name__,
+                    'exc_message': traceback.format_exc().split('\n'),
+                    'custom': 'translate error'
+                })
+            raise Ignore()
     else:
         update_credit_record_status(transcript_task_add.request.id, 'failed')
         transcript_task_add.update_state(
@@ -200,19 +211,28 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
     for audio in sliced_audios:
         logger.info(f'audio length: {len(audio)}')
         files.append(export_mp3(audio))
-    results = []
     # Transcribe
-    inputs = list(map(lambda file: (file, format, prompt), files))
-    with multiprocessing.Pool(processes=len(inputs)) as pool:
-        results = pool.starmap(transcribe_audio, inputs)
-    # Update user credit
-    update_credit_record(transcript_file_task_add.request.id,
-                         user['sub'], -duration, len(audio), 'audio')
-    srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
-    # Save subtitles
-    save_subtitle_result_to_mongodb(srts, transcript_file_task_add.request.id)
-    logger.info('request sent')
-    return
+    try:
+        inputs = list(map(lambda file: (file, format, prompt), files))
+        with multiprocessing.Pool(processes=len(inputs)) as pool:
+            results = pool.starmap(transcribe_audio, inputs)
+        # Update user credit
+        update_credit_record(transcript_file_task_add.request.id,
+                            user['sub'], -duration, len(audio), 'audio')
+        srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
+        # Save subtitles
+        save_subtitle_result_to_mongodb(srts, transcript_file_task_add.request.id)
+        logger.info('request sent')
+        return
+    except Exception as ex:
+        get_subtitles_translation.update_state(
+            state='FAILURE',
+            meta={
+                'exc_type': type(ex).__name__,
+                'exc_message': traceback.format_exc().split('\n'),
+                'custom': 'translate error'
+            })
+        raise Ignore()
 
 
 @celery.task(name="subtitles.translate")
@@ -267,7 +287,6 @@ def get_subtitles_recos(task_id):
                 'custom': 'translate error'
             })
         raise Ignore()
-    
 
 
 @task_postrun.connect
