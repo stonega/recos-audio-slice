@@ -179,7 +179,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
                 srts, transcript_task_add.request.id)
             return
         except Exception as ex:
-            get_subtitles_translation.update_state(
+            transcript_task_add.update_state(
                 state='FAILURE',
                 meta={
                     'exc_type': type(ex).__name__,
@@ -225,7 +225,7 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
         logger.info('request sent')
         return
     except Exception as ex:
-        get_subtitles_translation.update_state(
+        transcript_file_task_add.update_state(
             state='FAILURE',
             meta={
                 'exc_type': type(ex).__name__,

@@ -209,8 +209,8 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         print('Youtube url', url)
         url = get_youtube_audio_url(url)
         print('Youtube audio url', url)
-    print('Downloading:', url)
-    print('Srt format', srt)
+    logger.info('Downloading: %s', url)
+    logger.info('Srt format, %s', srt)
     try:
         response = requests.get(url, stream=True)
     except requests.exceptions.HTTPError as err:
