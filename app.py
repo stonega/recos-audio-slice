@@ -21,8 +21,9 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from database.database import add_credit_record, get_user_credit, get_user_lang, update_user_credit
+from database.database import add_credit_record, get_credit_record, get_user_credit, get_user_lang, update_user_credit
 from pytube import YouTube
+from utils import logger
 from fastapi.staticfiles import StaticFiles
 from database.mongodb import check_subtitles_task, save_subtitles_task
 
@@ -224,7 +225,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         content.extend(data)
 
     if response.status_code == 200:
-        print('Audio downloaded')
+        logger.info('Audio downloaded')
         credit = get_user_credit(current_user['sub'])
         audio = AudioSegment.from_file(io.BytesIO(content))
         duration = round(len(audio) / ONE_MINUTE)
@@ -249,6 +250,7 @@ def transcript(url: str, current_user: Annotated[User, Depends(get_current_user)
         print('Request sent')
         return results
     else:
+        logger.warning('Failed to download podcast')
         raise HTTPException(status_code=404, detail="Failed to fetch url")
 
 

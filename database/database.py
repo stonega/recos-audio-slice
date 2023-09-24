@@ -1,10 +1,8 @@
-from typing import List
 import os
-import uuid
 import cuid
 import psycopg2
 from dotenv import load_dotenv
-from utils import SrtItem, logger
+from utils import logger
 
 load_dotenv()
 
@@ -34,6 +32,13 @@ def get_user_lang(user_id: str):
         return 0
     return user[-1]
 
+def get_credit_record(task_id: str):
+    conn = psycopg2.connect(os.getenv("DATABASE_URL"))
+    cursor = conn.cursor()
+    select_query = """SELECT * FROM "Credit" where id = %s;"""
+    cursor.execute(select_query, (task_id,))
+    record = cursor.fetchone()
+    return record
 
 def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, audio_url: str, audio_image: str = ""):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))

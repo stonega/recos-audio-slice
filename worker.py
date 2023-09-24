@@ -127,7 +127,7 @@ def get_youtube_audio_url(link):
         return audio.url
 
 
-@celery.task(name="transcript.add")
+@celery.task(name="transcript.add", soft_time_limit=60*60, time_limit=60*60)
 def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prompt: str = '', audio_type: str = 'audio'):
     if (audio_type == 'youtube'):
         url = get_youtube_audio_url(url)
@@ -196,7 +196,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
         raise Ignore()
 
 
-@celery.task(name="transcript-file.add")
+@celery.task(name="transcript-file.add", soft_time_limit=60*60, time_limit=60*60)
 def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str = ''):
     credit = get_user_credit(user['sub'])
     audio = AudioSegment.from_file(io.BytesIO(file))
