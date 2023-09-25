@@ -145,7 +145,9 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
                                  user['sub'], -duration, len(audio), audio_type)
             srts = parse_srt(merge_multiple_srt_strings(
                 *results))  # type: ignore
+            logger.info(f"{len(srts)} text transcriptions")
             srts = fix_subtitle(srts)
+            logger.info(f"{len(srts)} text transcriptions fixed")
             # Save subtitles
             save_subtitle_result_to_mongodb(
                 srts, transcript_task_add.request.id)
