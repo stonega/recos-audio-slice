@@ -69,7 +69,9 @@ def fix_subtitle(subtitles):
     ntokens = []
     chunks = []
     for subtitle in subtitles:
-        chunks.append(subtitle)
+        chunk = subtitle["id"] + '\n' + str(subtitle['start_time'] + '-->' +
+                    subtitle['end_time'] + '\n' + subtitle['text'])
+        chunks.append(chunk)
         ntokens.append(num_tokens_from_messages(subtitle))
 
     chunks = group_chunks(chunks, ntokens)
