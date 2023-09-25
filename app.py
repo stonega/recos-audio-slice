@@ -333,7 +333,7 @@ async def transcript_task_retry(current_user: Annotated[User, Depends(get_curren
     else:
         audio_url = record['audio_url']
         task = transcript_task_add.delay(
-            audio_url, current_user, True, record["prompt"])
+            audio_url, current_user, True, record["prompt"], record['type'])
         update_credit_record_task_id(
             id, task.id, )
 
