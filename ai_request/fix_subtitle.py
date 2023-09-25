@@ -7,7 +7,6 @@ from ai_request.utils import group_chunks, num_tokens_from_messages
 
 def fix(text):
     prompt_text="You will be provided with a subtitle content,  and your task is to combine two subtitle items if the item sentence is not complete.  Then correct any spelling discrepancies in the content. Then if the slash word is inside a url, convert it to /."
-
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-16k",
@@ -37,10 +36,7 @@ def fix(text):
         try:
             t_text = ast.literal_eval(t_text)
         except Exception:
-            # some ["\n"] not literal_eval, not influence the result
             pass
-        # openai has a time limit for api  Limit: 20 / min
-        time.sleep(3)
     except Exception as e:
         print(str(e), "will sleep 60 seconds")
         # TIME LIMIT for open api please pay
@@ -66,7 +62,6 @@ def fix(text):
             t_text = ast.literal_eval(t_text)
         except Exception:
             pass
-    print(t_text)
     return t_text
 
 
@@ -74,18 +69,15 @@ def fix_subtitle(subtitles):
     ntokens = []
     chunks = []
     for subtitle in subtitles:
-        chunk = str(subtitle['start_time'] + '-->' +
-                    subtitle['end_time'] + '\n' + subtitle['text'])
-        chunks.append(chunk)
-        ntokens.append(num_tokens_from_messages(chunk))
+        chunks.append(subtitle)
+        ntokens.append(num_tokens_from_messages(subtitle))
 
     chunks = group_chunks(chunks, ntokens)
-    translated_chunks = []
-    for i, chunk in enumerate(chunks):
-        print(str(i+1) + " / " + str(len(chunks)))
-        translated_chunks.append(fix(chunk)+"\n")
+    fixed_chunks = []
+    for chunk in enumerate(chunks):
+        fixed_chunks.append(fix(chunk)+"\n")
 
     # join the chunks together
-    result = '\n'.join(translated_chunks)
+    result = '\n'.join(fixed_chunks)
     print(result)
     return parse_srt(result)
