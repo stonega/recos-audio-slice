@@ -34,6 +34,7 @@ def fix(text):
             .encode("utf8")
             .decode()
         )
+        logger.info(t_text)
 
         try:
             t_text = ast.literal_eval(t_text)
@@ -75,8 +76,8 @@ def fix_subtitle(subtitles):
                     subtitle['end_time'] + '\n' + subtitle['text'])
         chunks.append(chunk)
         ntokens.append(num_tokens_from_messages(subtitle))
-
     chunks = group_chunks(chunks, ntokens)
+    logger.info(chunks)
     fixed_chunks = []
     for chunk in enumerate(chunks):
         fixed_chunks.append(fix(chunk)+"\n")
