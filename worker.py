@@ -99,7 +99,7 @@ def get_youtube_audio_url(link):
 
 
 @celery.task(name="transcript.add", soft_time_limit=60*60, time_limit=60*60)
-def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prompt: str = '', audio_type: str = 'audio'):
+def transcript_task_add(url: str, user, srt: bool = False, prompt: str = '', audio_type: str = 'audio'):
     if (audio_type == 'youtube'):
         url = get_youtube_audio_url(url)
         logger.info(f'youtube audio {url}')
