@@ -27,6 +27,10 @@ def translate(text, output_locale):
                     "content": text
                 }
             ],
+            temperature=0,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
         )
         t_text = (
             completion["choices"][0]  # type: ignore

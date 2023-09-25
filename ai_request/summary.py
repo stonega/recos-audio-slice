@@ -8,6 +8,7 @@ import openai
 from utils import logger
 from ai_request.utils import group_chunks, num_tokens_from_messages, supportedLanguages
 
+
 def summary(text, output_locale):
     output_language = supportedLanguages[output_locale]
     prompt_text = f"You will be provided with podcast transcription, and your task is to summarize the podcast into a {output_language} text in about 50 words"
@@ -22,9 +23,13 @@ def summary(text, output_locale):
                 },
                 {
                     "role": "user",
-                    "content":text 
+                    "content": text
                 }
             ],
+            temperature=0,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0
         )
         t_text = (
             completion["choices"][0]  # type: ignore
