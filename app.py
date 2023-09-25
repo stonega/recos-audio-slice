@@ -21,7 +21,7 @@ from tqdm import tqdm
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from database.database import add_credit_record, get_credit_record, get_user_credit, get_user_lang, update_user_credit
+from database.database import add_credit_record, get_credit_record, get_user_credit, get_user_lang, update_credit_record_status, update_credit_record_task_id, update_user_credit
 from pytube import YouTube
 from utils import logger
 from fastapi.staticfiles import StaticFiles
@@ -316,6 +316,30 @@ async def transcript_file_task(file: UploadFile, current_user: Annotated[User, D
         raise HTTPException(status_code=404, detail="File not support")
 
 
+@app.post("/transcript-task/retry")
+async def transcript_task_retry(current_user: Annotated[User, Depends(get_current_user)], task_id: str):
+    record = get_credit_record(task_id=task_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Task not support")
+    if record["type"] == "audio":
+        filename = record['audio_url']
+        with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
+            file_bytes = file_object.read()
+            print('Audio loaded', filename)
+        task = transcript_file_task_add.delay(
+            file_bytes, current_user, True, record["prompt"])
+        update_credit_record_task_id(
+            task_id, task.id, )
+    else:
+        audio_url = record['audio_url']
+        task = transcript_task_add.delay(
+            audio_url, current_user, True, record["prompt"])
+        update_credit_record_task_id(
+            task_id, task.id, )
+
+    return JSONResponse({"task_id": task.id})
+
+
 @app.get("/tasks/{task_id}")
 def get_status(task_id):
     task_result = celery.AsyncResult(task_id)
@@ -353,6 +377,7 @@ def get_summary(task_id, current_user: Annotated[User, Depends(get_current_user)
             task_id, lang)
         save_subtitles_task('summary', task_id, task.id)
         return JSONResponse({'task_id': task.id})
+
 
 @app.get("/subtitles/recos/{task_id}")
 def get_recos(task_id, current_user: Annotated[User, Depends(get_current_user)]):
