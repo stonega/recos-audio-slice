@@ -339,7 +339,6 @@ async def transcript_task_retry(current_user: Annotated[User, Depends(get_curren
 
     return JSONResponse({"task_id": task.id})
 
-
 @app.get("/tasks/{task_id}")
 def get_status(task_id):
     task_result = celery.AsyncResult(task_id)
