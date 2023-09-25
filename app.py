@@ -316,7 +316,7 @@ async def transcript_file_task(file: UploadFile, current_user: Annotated[User, D
         raise HTTPException(status_code=404, detail="File not support")
 
 
-@app.post("/transcript-task/retry")
+@app.get("/transcript-task/retry/{task_id}")
 async def transcript_task_retry(current_user: Annotated[User, Depends(get_current_user)], task_id: str):
     record = get_credit_record(task_id=task_id)
     if record is None:
