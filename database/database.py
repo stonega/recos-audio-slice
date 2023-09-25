@@ -32,15 +32,15 @@ def get_user_lang(user_id: str):
         return 0
     return user[-1]
 
-def get_credit_record(task_id: str):
+def get_credit_record(id: str):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
-    select_query = """SELECT * FROM "Credit" where task_id = %s;"""
-    cursor.execute(select_query, (task_id,))
+    select_query = """SELECT * FROM "Credit" where id = %s;"""
+    cursor.execute(select_query, (id,))
     record = cursor.fetchone()
     if record is None:
         return None
-    return { "type": record[5], "audio_url": record[7], "prompt": record[8]}
+    return { "type": record[5], "audio_url": record[7], "prompt": record[8], "task_id": record[-1]}
 
 def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, audio_url: str, audio_image: str = ""):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
@@ -70,11 +70,11 @@ def update_credit_record_status(task_id: str, status: str):
     conn.commit()
     return cursor.rowcount
 
-def update_credit_record_task_id(task_id: str, new_task_id: str):
+def update_credit_record_task_id(id: str, new_task_id: str):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
-    insert = """UPDATE "Credit" SET task_id = %s, status = 'pending' WHERE task_id = %s;"""
-    cursor.execute(insert, (new_task_id, task_id))
+    insert = """UPDATE "Credit" SET task_id = %s, status = 'pending' WHERE id = %s;"""
+    cursor.execute(insert, (new_task_id, id))
     conn.commit()
     return cursor.rowcount
 

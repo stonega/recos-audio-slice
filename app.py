@@ -316,9 +316,9 @@ async def transcript_file_task(file: UploadFile, current_user: Annotated[User, D
         raise HTTPException(status_code=404, detail="File not support")
 
 
-@app.get("/transcript-task/retry/{task_id}")
-async def transcript_task_retry(current_user: Annotated[User, Depends(get_current_user)], task_id: str):
-    record = get_credit_record(task_id=task_id)
+@app.get("/transcript-task/retry/{id}")
+async def transcript_task_retry(current_user: Annotated[User, Depends(get_current_user)], id: str):
+    record = get_credit_record(id)
     if record is None:
         raise HTTPException(status_code=404, detail="Task not support")
     if record["type"] == "audio":
@@ -329,13 +329,13 @@ async def transcript_task_retry(current_user: Annotated[User, Depends(get_curren
         task = transcript_file_task_add.delay(
             file_bytes, current_user, True, record["prompt"])
         update_credit_record_task_id(
-            task_id, task.id, )
+            id, task.id, )
     else:
         audio_url = record['audio_url']
         task = transcript_task_add.delay(
             audio_url, current_user, True, record["prompt"])
         update_credit_record_task_id(
-            task_id, task.id, )
+            id, task.id, )
 
     return JSONResponse({"task_id": task.id})
 
