@@ -14,6 +14,7 @@ from tqdm import tqdm
 import requests
 from celery.signals import task_postrun
 from celery.exceptions import Ignore
+from ai_request.fix_subtitle import fix_subtitle
 
 from database.database import get_user_credit, update_credit_record, update_credit_record_status
 from database.mongodb import get_subtitles_from_mongodb, save_subtitle_recos_to_mongodb, save_subtitle_result_to_mongodb, save_subtitle_summary_to_mongodb, update_subtitle_result_to_mongodb
@@ -87,36 +88,6 @@ def transcribe_audio(filename, format, prompt):
         return transcript
 
 
-def fix_subtitle(subtitle: str):
-    prompt_text = f"""
-    system_prompt = "You are a helpful assistant. Your task is to correct any spelling discrepancies in the transcribed text. Make sure only use the context provided
-"""
-    logger.info(prompt_text)
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-16k",
-        messages=[
-            {
-                "role": "system",
-                "content": prompt_text,
-            },
-            {
-                "role": "user",
-                "content": subtitle
-            }
-        ],
-    )
-    t_text = (
-        completion["choices"][0]  # type: ignore
-        .get("message")
-        .get("content")
-        .encode("utf8")
-        .decode()
-    )
-    logger.info(t_text)
-    return t_text
-
-
 def get_youtube_audio_url(link):
     print('Transcribing youtube', link)
     yt = YouTube(link)
@@ -174,6 +145,7 @@ def transcript_task_add(url: str, user, title: str = '', srt: bool = False, prom
                                  user['sub'], -duration, len(audio), audio_type)
             srts = parse_srt(merge_multiple_srt_strings(
                 *results))  # type: ignore
+            srts = fix_subtitle(srts)
             # Save subtitles
             save_subtitle_result_to_mongodb(
                 srts, transcript_task_add.request.id)
