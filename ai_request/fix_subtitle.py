@@ -8,7 +8,7 @@ from ai_request.utils import group_chunks, num_tokens_from_messages
 
 def fix(text):
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    prompt_text="You will be provided with a subtitle content,  and your task is to combine two subtitle items if the item sentence is not complete.  Then correct any spelling discrepancies in the content. Then if the slash word is inside a url, convert it to /."
+    prompt_text="You will be provided with a subtitle content, and your task is to combine two subtitle items if the item sentence is not complete.  Then correct any spelling discrepancies in the content. Then if the slash word is inside a url, convert it to /."
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-16k",
@@ -40,6 +40,7 @@ def fix(text):
             t_text = ast.literal_eval(t_text)
         except Exception:
             pass
+        time.sleep(3)
     except Exception as e:
         print(str(e), "will sleep 60 seconds")
         # TIME LIMIT for open api please pay
