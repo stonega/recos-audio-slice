@@ -321,6 +321,7 @@ async def transcript_task_retry(current_user: Annotated[User, Depends(get_curren
     record = get_credit_record(id)
     if record is None:
         raise HTTPException(status_code=404, detail="Task not support")
+    logger.info(record)
     if record["type"] == "audio":
         filename = record['audio_url']
         with open(VOLUME_PATH + '/' + filename, "wb+") as file_object:
