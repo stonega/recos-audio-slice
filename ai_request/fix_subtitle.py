@@ -71,8 +71,8 @@ def fix(text):
 def fix_subtitle(subtitles):
     ntokens = []
     chunks = []
-    logger.info(chunks)
     for subtitle in subtitles:
+        logger.info(subtitle)
         chunk = subtitle["id"] + '\n' + str(subtitle['start_time'] + '-->' +
                     subtitle['end_time'] + '\n' + subtitle['text'])
         chunks.append(chunk)
