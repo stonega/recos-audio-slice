@@ -73,8 +73,7 @@ def fix_subtitle(subtitles):
     chunks = []
     for subtitle in subtitles:
         logger.info(subtitle)
-        chunk = subtitle["id"] + '\n' + str(subtitle['start_time'] + '-->' +
-                    subtitle['end_time'] + '\n' + subtitle['text'])
+        chunk = str(subtitle["id"]) + '\n' + subtitle["time"] + '\n' + subtitle['text'] + '\n'
         chunks.append(chunk)
         ntokens.append(num_tokens_from_messages(subtitle))
     chunks = group_chunks(chunks, ntokens)
