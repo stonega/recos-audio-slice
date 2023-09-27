@@ -45,7 +45,7 @@ def get_credit_record(id: str):
 def add_credit_record(task_id: str, user_id: str, name: str | None, type: str, audio_url: str, audio_image: str = ""):
     conn = psycopg2.connect(os.getenv("DATABASE_URL"))
     cursor = conn.cursor()
-    insert = """INSERT INTO "Credit" (id, name, "userId", type, "audio_url", "audio_image", "task_id") VALUES ( %s, %s, %s, %s, %s, %s);"""
+    insert = """INSERT INTO "Credit" (id, name, "userId", type, "audio_url", "audio_image", "task_id") VALUES ( %s, %s, %s, %s, %s, %s, %s);"""
     cursor.execute(insert, (task_id, name, user_id, type, audio_url, audio_image, task_id))
     conn.commit()
     return cursor.rowcount
