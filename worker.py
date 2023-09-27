@@ -146,8 +146,7 @@ def transcript_task_add(url: str, user, srt: bool = False, prompt: str = '', aud
             srts = parse_srt(merge_multiple_srt_strings(
                 *results))  # type: ignore
             logger.info(f"{len(srts)} text transcriptions")
-            srts = fix_subtitle(srts)
-            logger.info(f"{len(srts)} text transcriptions fixed")
+            # srts = fix_subtitle(srts)
             # Save subtitles
             save_subtitle_result_to_mongodb(
                 srts, transcript_task_add.request.id)
@@ -192,7 +191,7 @@ def transcript_file_task_add(file: bytes, user, srt: bool = False, prompt: str =
         update_credit_record(transcript_file_task_add.request.id,
                              user['sub'], -duration, len(audio), 'audio')
         srts = parse_srt(merge_multiple_srt_strings(*results))  # type: ignore
-        srts = fix_subtitle(srts)
+        # srts = fix_subtitle(srts)
         # Save subtitles
         save_subtitle_result_to_mongodb(
             srts, transcript_file_task_add.request.id)
