@@ -43,6 +43,12 @@ def convert_time_to_milliseconds(time_str: SrtTimestamp) -> int:
         int(s) * 1000 +
         int(ms)
     )
+def convert_milliseconds_to_time(milliseconds: int) -> str:
+    ms = int(milliseconds % 1000)
+    seconds = int((milliseconds // 1000) % 60)
+    minutes = int((milliseconds // (1000 * 60)) % 60)
+    hours = int((milliseconds // (1000 * 60 * 60)))
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{ms:03d}"
 
 
 def get_duration(start_time: SrtTimestamp, end_time: SrtTimestamp) -> int:
@@ -56,33 +62,19 @@ def merge_srt_strings(srt1: str, srt2: str) -> str:
     srt2_parsed = parse_srt(srt2)
 
     last_time_srt1 = srt1_parsed[-1]
-    last_time_srt1["time"] = last_time_srt1["time"][:-6] + "00,000"
-
-    time_parts = last_time_srt1["time"].split(" --> ")[1].split(":")
-    end_time_srt1 = (int(time_parts[0]) * 3600 +
-                     int(time_parts[1]) * 60) * 1000
+    _, end = last_time_srt1["time"].split(" --> ")
+    end_time_srt1 = convert_time_to_milliseconds(end)
 
     srt2_adjusted = []
     for subtitle in srt2_parsed:
         start, end = subtitle["time"].split(" --> ")
-        parts = start.split(":")
-        time_in_ms = (int(parts[0]) * 3600 + int(parts[1])
-                      * 60 + float(parts[2].replace(",", "."))) * 1000
-        adjusted_time = time_in_ms + end_time_srt1
-        ms = int(adjusted_time % 1000)
-        seconds = int((adjusted_time // 1000) % 60)
-        minutes = int((adjusted_time // (1000 * 60)) % 60)
-        hours = int((adjusted_time // (1000 * 60 * 60)))
-        start_adjusted = f"{hours:02d}:{minutes:02d}:{seconds:02d},{ms:03d}"
-        parts = end.split(":")
-        time_in_ms = (int(parts[0]) * 3600 + int(parts[1])
-                      * 60 + float(parts[2].replace(",", "."))) * 1000
-        adjusted_time = time_in_ms + end_time_srt1
-        ms = int(adjusted_time % 1000)
-        seconds = int((adjusted_time // 1000) % 60)
-        minutes = int((adjusted_time // (1000 * 60)) % 60)
-        hours = int((adjusted_time // (1000 * 60 * 60)))
-        end_adjusted = f"{hours:02d}:{minutes:02d}:{seconds:02d},{ms:03d}"
+        time_in_ms = convert_time_to_milliseconds(start)
+        
+        end_time_srt1 = time_in_ms + end_time_srt1
+        start_adjusted = convert_milliseconds_to_time(end_time_srt1)
+        duration = get_duration(start, end)
+        adjusted_time = duration + end_time_srt1
+        end_adjusted = convert_milliseconds_to_time(adjusted_time)
         srt2_adjusted.append({
             "id": subtitle["id"] + len(srt1_parsed),
             "time": f"{start_adjusted} --> {end_adjusted}",
